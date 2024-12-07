@@ -468,8 +468,12 @@ int finalizaInsert(char *nome, column *c){
         else if (auxT[t].tipo == 'I'){ // Grava um dado do tipo inteiro.
           i = 0;
           while (i < strlen(auxC->valorCampo)){
-            if(auxC->valorCampo[i] < 48 || auxC->valorCampo[i] > 57){
-              printf("ERROR: column \"%s\" expectet integer.\n", auxC->nomeCampo);
+            // Valida que o dado inserido é um número (ASCII entre 48~57) e evita erro quando tem carctere de nº negativo (45)
+            if((auxC->valorCampo[i] >= 48 && auxC->valorCampo[i] <= 57) || (auxC->valorCampo[i] == 45 && strlen(auxC->valorCampo) > 1)){
+              i++;
+            }
+            else{
+              printf("ERROR: column \"%s\" expected integer.\n", auxC->nomeCampo);
   				    free(tab); // Libera a memoria da estrutura.
   				    free(tab2); // Libera a memoria da estrutura.
   				    free(auxT); // Libera a memoria da estrutura.
@@ -477,7 +481,6 @@ int finalizaInsert(char *nome, column *c){
   				    fclose(dados);
               return ERRO_NO_TIPO_INTEIRO;
             }
-            i++;
           }
           int valorInteiro = 0;
           sscanf(auxC->valorCampo,"%d",&valorInteiro);
@@ -486,7 +489,11 @@ int finalizaInsert(char *nome, column *c){
         else if (auxT[t].tipo == 'D'){ // Grava um dado do tipo double.
             x = 0;
             while (x < strlen(auxC->valorCampo)){
-                if((auxC->valorCampo[x] < 48 || auxC->valorCampo[x] > 57) && (auxC->valorCampo[x] != 46)){
+                // Valida que o dado inserido é um número (ASCII entre 48~57) e evita erro quando tem carctere de nº negativo (45)
+                if((auxC->valorCampo[x] >= 48 && auxC->valorCampo[x] <= 57) || auxC->valorCampo[x] == 45 || auxC->valorCampo[x] == 46){
+                  x++;
+                }
+                else{
                     printf("ERROR: column \"%s\" expect double.\n", auxC->nomeCampo);
           					free(tab); // Libera a memoria da estrutura.
           					free(tab2); // Libera a memoria da estrutura.
@@ -495,7 +502,6 @@ int finalizaInsert(char *nome, column *c){
           					fclose(dados);
                     return ERRO_NO_TIPO_DOUBLE;
                 }
-                x++;
             }
 
             double valorDouble = convertD(auxC->valorCampo);
