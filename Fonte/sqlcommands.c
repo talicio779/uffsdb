@@ -811,13 +811,13 @@ Lista *op_select(inf_select *select) {
             free(esquema);
             return NULL;
         }
-        for(k = j = i = 0; !abortar && k < bufferpoll[p].nrec; k++){
+        for(k = j = 0; !abortar && k < bufferpoll[p].nrec; k++){
             for(i = 0; i < objeto.qtdCampos; i++, j++)
                 adcNodo(tupla, tupla->ult, (void *)(&pagina[j]));
             char sat = 0;
 
             if(select->tok){
-                Lista *l = resArit(select->tok,tupla);
+                Lista *l = resArit(select->tok, tupla);
                 if(l){
                     Lista *l2 = relacoes(l);
                     sat = (logPosfixa(l2) != 0);
