@@ -596,37 +596,37 @@ void insert(rc_insert *s_insert) {
 }
 
 //select * from t4;
-int validaProj(Lista *proj,column *colunas,int qtdColunas,char *pert){
-  if(proj->tam == 1 && ((char *)proj->prim->inf)[0] == '*'){
-    free(rmvNodoPtr(proj,proj->prim));
-    proj->prim = proj->ult = NULL;
-    for(int j = 0;j < qtdColunas; j++){
-      pert[j] = 1;
-      char *str = malloc(sizeof(char)*strlen(colunas[j].nomeCampo));
-      strcpy(str,colunas[j].nomeCampo);
-      adcNodo(proj,proj->ult,str);
+int validaProj(Lista *proj, column *colunas, int qtdColunas){
+    if(proj->tam == 1 && ((char *)proj->prim->inf)[0] == '*'){
+        free(rmvNodoPtr(proj, proj->prim));
+        proj->prim = proj->ult = NULL;
+        for(int j = 0; j < qtdColunas; j++){
+            char *str = malloc(sizeof(char) * strlen(colunas[j].nomeCampo));
+            strcpy(str, colunas[j].nomeCampo);
+            adcNodo(proj, proj->ult, str);
+        }
+        return 1;
     }
-    return 1;
-  }
-  char *validar = malloc(sizeof(char)*proj->tam);
-  for(int j = 0; j < proj->tam; j++) validar[j] = 0;
-  for(int j = 0; j < qtdColunas; j++){
+
+    char *validar = malloc(sizeof(char)*proj->tam);
+    memset(validar, 0, proj->tam); // Inicializa o vetor de validação com 0
+
+    for(int j = 0; j < qtdColunas; j++){
+        int k = 0;
+        for(Nodo *it = proj->prim; it; it = it->prox, k++){
+            if (strcmp((char *)it->inf, colunas[j].nomeCampo) == 0) validar[k] = 1;       // Marca a projeção como válida
+        }
+    }
     int k = 0;
-    for(Nodo *it = proj->prim; it; it = it->prox,k++){
-      pert[j] |= (strcmp((char *)it->inf,colunas[j].nomeCampo) == 0);
-      validar[k] |= pert[j];
+    for(Nodo *it = proj->prim; it; it = it->prox, k++){
+        if(!validar[k]){
+            free(validar);
+            printf("A coluna da projecao %s não pertence a tabela.\n",(char *)it->inf);
+            return 0;
+        }
     }
-  }
-  int k = 0;
-  for(Nodo *it = proj->prim; it; it = it->prox,k++){
-    if(!validar[k]){
-      free(validar);
-      printf("A coluna da projecao %s não pertence a tabela.\n",(char *)it->inf);
-      return 0;
-    }
-  }
-  free(validar);
-  return 1;
+    free(validar);
+    return 1;
 }
 
 inf_where *novoTokenWhere(char *str,int id){
@@ -718,131 +718,132 @@ void printConsulta(Lista *p,Lista *l){
   printf("\n %d Linha%s.\n",l->tam,l->tam == 1 ? "" : "s");
 }
 
-void adcResultado(Lista *resultado,Lista *tupla,char *pertence){
-  adcNodo(resultado,resultado->ult,(void *)novaLista(NULL));
-  Lista *tuplaRes = (Lista *)(resultado->ult->inf);
-  int ci = 0;
-  for(Nodo *n1 = tupla->prim; n1; n1 = n1->prox,ci++){
-    column *c = (column *)(n1->inf);
-    if(pertence[ci]){//adcionar em resultado.
-      inf_where *nw = malloc(sizeof(inf_where));
-      nw->id = c->tipoCampo;
-      if(c->tipoCampo == 'S'){
-        char *str = malloc(sizeof(char)*strlen(c->valorCampo));
-        str[0] = '\0';
-        strcpy(str,c->valorCampo);
-        nw->token = (void *)str;
-      }
-      else if(c->tipoCampo == 'I'){
-        int *n = malloc(sizeof(int));
-        n = (int *)(c->valorCampo);
-        nw->token = ( void *)n;
-      }
-      else if(c->tipoCampo == 'C'){
-        char *n = malloc(sizeof(char));
-        n = (char *)(c->valorCampo);
-        nw->token = ( void *)n;
-      }
-      else if(c->tipoCampo == 'D'){
-        double *n = malloc(sizeof(double));
-        n = (double *)(c->valorCampo);
-        nw->token = ( void *)n;
-      }
-      adcNodo(tuplaRes,tuplaRes->ult,(void *)nw);
+void adcResultado(Lista *resultado, Lista *tupla){
+    adcNodo(resultado, resultado->ult, (void *)novaLista(NULL));
+    Lista *tuplaRes = (Lista *)(resultado->ult->inf);
+    int ci = 0;
+
+    for(Nodo *n1 = tupla->prim; n1; n1 = n1->prox,ci++){
+        column *c = (column *)(n1->inf);
+            
+        inf_where *nw = malloc(sizeof(inf_where));
+        nw->id = c->tipoCampo;
+
+        if(c->tipoCampo == 'S'){
+            char *str = malloc(sizeof(char)*strlen(c->valorCampo));
+            str[0] = '\0';
+            strcpy(str, c->valorCampo);
+            nw->token = (void *)str;
+        }
+        else if(c->tipoCampo == 'I'){
+            int *n = malloc(sizeof(int));
+            n = (int *)(c->valorCampo);
+            nw->token = (void *)n;
+        }
+        else if(c->tipoCampo == 'C'){
+            char *n = malloc(sizeof(char));
+            n = (char *)(c->valorCampo);
+            nw->token = (void *)n;
+        }
+        else if(c->tipoCampo == 'D'){
+            double *n = malloc(sizeof(double));
+            n = (double *)(c->valorCampo);
+            nw->token = (void *)n;
+        }
+        adcNodo(tuplaRes, tuplaRes->ult, (void *)nw);
     }
-  }
 }
 
 Lista *op_select(inf_select *select) {
   //inicio das validações.
-  tp_table *esquema;
-  tp_buffer *bufferpoll;
-  struct fs_objects objeto;
-  if(!verificaNomeTabela(select->tabela)){
-    printf("\nERROR: relation \"%s\" was not found.\n\n\n", select->tabela);
-    return NULL;
-  }
-  objeto = leObjeto(select->tabela);
-  esquema = leSchema(objeto);
-  if(esquema == ERRO_ABRIR_ESQUEMA){
-    printf("ERROR: schema cannot be created.\n");
-    free(esquema);
-    return NULL;
-  }
-  bufferpoll = initbuffer();
-  if(bufferpoll == ERRO_DE_ALOCACAO){
-    free(bufferpoll);
-    free(esquema);
-    printf("ERROR: no memory available to allocate buffer.\n");
-    return NULL;
-  }
-  int erro = SUCCESS,x;
-  for(x = 0; erro == SUCCESS; x++)
-    erro = colocaTuplaBuffer(bufferpoll, x, esquema, objeto);
-  x--;
-  column *pagina = getPage(bufferpoll, esquema, objeto, 0);
-  if(!pagina){
-    printf("Tabela vazia.\n");
-    free(bufferpoll);
-    free(esquema);
-    return NULL;
-  }
-  char *pertence = malloc(sizeof(char)*objeto.qtdCampos);
-  if(!validaProj(select->proj,pagina,objeto.qtdCampos,pertence)){
-    free(bufferpoll);
-    free(pertence);
-    free(esquema);
-    return NULL;
-  }
-  if(!validaColsWhere(select->tok,pagina,objeto.qtdCampos)){
-    free(bufferpoll);
-    free(pertence);
-    free(esquema);
-    return NULL;
-  }
-  int i,j,k;
-  char abortar = 0;
-  Lista *tupla = novaLista(NULL),
-        *resultado = novaLista(NULL);
-  for(int p = 0; !abortar && x; x -= bufferpoll[p++].nrec){
-    pagina = getPage(bufferpoll, esquema, objeto, p);
-    if(pagina == ERRO_PARAMETRO){
-      printf("ERROR: could not open the table.\n");
-      free(bufferpoll);
-      free(esquema);
-      return NULL;
+    tp_table *esquema;
+    tp_buffer *bufferpoll;
+    struct fs_objects objeto;
+    if(!verificaNomeTabela(select->tabela)){
+        printf("\nERROR: relation \"%s\" was not found.\n\n\n", select->tabela);
+        return NULL;
     }
-    for(k = j = i = 0; !abortar && k < bufferpoll[p].nrec; k++){
-      for(i = 0; i < objeto.qtdCampos; i++,j++)
-        adcNodo(tupla,tupla->ult,(void *)(&pagina[j]));
-      char sat = 0;
-      if(select->tok){
-        Lista *l = resArit(select->tok,tupla);
-        if(l){
-          Lista *l2 = relacoes(l);
-          sat = (logPosfixa(l2) != 0);
+    objeto = leObjeto(select->tabela);
+    esquema = leSchema(objeto);
+    if(esquema == ERRO_ABRIR_ESQUEMA){
+        printf("ERROR: schema cannot be created.\n");
+        free(esquema);
+        return NULL;
+    }
+    bufferpoll = initbuffer();
+    if(bufferpoll == ERRO_DE_ALOCACAO){
+        free(bufferpoll);
+        free(esquema);
+        printf("ERROR: no memory available to allocate buffer.\n");
+        return NULL;
+    }
+    int erro = SUCCESS,x;
+    for(x = 0; erro == SUCCESS; x++)
+        erro = colocaTuplaBuffer(bufferpoll, x, esquema, objeto);
+    x--;
+    column *pagina = getPage(bufferpoll, esquema, objeto, 0);
+    if(!pagina){
+        printf("Tabela vazia.\n");
+        free(bufferpoll);
+        free(esquema);
+        return NULL;
+    }
+
+    if(!validaProj(select->proj, pagina, objeto.qtdCampos)){
+        free(bufferpoll);
+        free(esquema);
+        return NULL;
+    }
+
+    if(!validaColsWhere(select->tok,pagina,objeto.qtdCampos)){
+        free(bufferpoll);
+        free(esquema);
+        return NULL;
+    }
+    int i,j,k;
+    char abortar = 0;
+    Lista *tupla = novaLista(NULL), *resultado = novaLista(NULL);
+    for(int p = 0; !abortar && x; x -= bufferpoll[p++].nrec){
+        pagina = getPage(bufferpoll, esquema, objeto, p);
+        if(pagina == ERRO_PARAMETRO){
+            printf("ERROR: could not open the table.\n");
+            free(bufferpoll);
+            free(esquema);
+            return NULL;
         }
-        else abortar = 1;
-      }
-      else sat = 1;
-      if(!abortar && sat) adcResultado(resultado,tupla,pertence);
-      for(Nodo *n1 = tupla->prim,*n2; n1; n1 = n2){
-        n2 = n1->prox;
-        rmvNodoPtr(tupla,n1);
-        //não precisa dar free na informação
-        //pois é ponteiro pra pagina[j]
-      }
-      tupla->prim = tupla->ult = NULL;
+        for(k = j = i = 0; !abortar && k < bufferpoll[p].nrec; k++){
+            for(i = 0; i < objeto.qtdCampos; i++, j++)
+                adcNodo(tupla, tupla->ult, (void *)(&pagina[j]));
+            char sat = 0;
+
+            if(select->tok){
+                Lista *l = resArit(select->tok,tupla);
+                if(l){
+                    Lista *l2 = relacoes(l);
+                    sat = (logPosfixa(l2) != 0);
+                }
+                else abortar = 1;
+            }
+            else sat = 1;
+
+            if(!abortar && sat) adcResultado(resultado, tupla);
+
+            for(Nodo *n1 = tupla->prim, *n2; n1; n1 = n2){
+                n2 = n1->prox;
+                rmvNodoPtr(tupla, n1);
+                //não precisa dar free na informação
+                //pois é ponteiro pra pagina[j]
+            }
+            tupla->prim = tupla->ult = NULL;
+        }
     }
-  }
-  if(abortar){
-    resultado = NULL;
-  }
-  free(tupla); tupla = NULL;
-  free(esquema); esquema = NULL;
-  free(pertence); pertence = NULL;
-  free(bufferpoll); bufferpoll = NULL;
-  return resultado;
+    if(abortar){
+        resultado = NULL;
+    }
+    free(tupla); tupla = NULL;
+    free(esquema); esquema = NULL;
+    free(bufferpoll); bufferpoll = NULL;
+    return resultado;
 }
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Copia todas as informações menos a tabela do objeto, que será removida.
