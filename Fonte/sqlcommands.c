@@ -82,13 +82,86 @@ char *getInsertedValue(rc_insert *s_insert, char *columnName, table *tabela) {
 		if (objcmp(s_insert->columnName[i], columnName) == 0)
 			return s_insert->values[i];
 
+  int maxPK = getMaxPrimaryKey(tabela->nome);
+
 	tipo = retornaTamanhoTipoDoCampo(columnName, tabela);
-	noValue = (char *)malloc(sizeof(char)*3);
-	if (tipo == 'I') noValue = "0";
-	else if (tipo == 'D') noValue = "0.0";
-	else noValue[0] = '\0';
+	noValue = (char *)malloc(50); 
+
+	if (tipo == 'I') {
+		sprintf(noValue, "%d", maxPK + 1);
+	} else if (tipo == 'D') {
+		sprintf(noValue, "0.0");
+	} else {
+		noValue[0] = '\0';
+	}
+
 	return noValue;
 }
+
+int getMaxPrimaryKey(char *nomeTabela) {
+    struct fs_objects objeto;
+    tp_table *esquema;
+    tp_buffer *bufferpoll;
+    column *pagina;
+
+    if (!verificaNomeTabela(nomeTabela)) {
+        printf("ERROR: relation \"%s\" was not found.\n", nomeTabela);
+        return ERRO_NOME_TABELA;
+    }
+
+    objeto = leObjeto(nomeTabela);
+    esquema = leSchema(objeto);
+
+    if (esquema == ERRO_ABRIR_ESQUEMA) {
+        printf("ERROR: schema cannot be created.\n");
+        free(esquema);
+        return ERRO_ABRIR_ESQUEMA;
+    }
+
+    bufferpoll = initbuffer();
+
+    if (bufferpoll == ERRO_DE_ALOCACAO) {
+        printf("ERROR: no memory available to allocate buffer.\n");
+        free(bufferpoll);
+        free(esquema);
+        return ERRO_DE_ALOCACAO;
+    }
+
+    int erro = SUCCESS, x;
+    for (x = 0; erro == SUCCESS; x++) {
+        erro = colocaTuplaBuffer(bufferpoll, x, esquema, objeto);
+    }
+
+    int maiorPK = -1; 
+    for (int page = 0; page < x; page++) {
+        pagina = getPage(bufferpoll, esquema, objeto, page);
+        if (!pagina) continue;
+
+        for (int i = 0; i < bufferpoll[page].nrec; i++) {
+            column *campo = &pagina[i * objeto.qtdCampos];
+            for (int j = 0; j < objeto.qtdCampos; j++) {
+                if (campo[j].tipoCampo == 'I' && esquema[j].chave == PK) {
+                    int valorPK = *((int *)campo[j].valorCampo);
+                    if (valorPK > maiorPK) {
+                        maiorPK = valorPK;
+                    }
+                }
+            }
+        }
+    }
+
+    // Limpeza de memória
+    free(bufferpoll);
+    free(esquema);
+
+    if (maiorPK == -1) {
+        // Se nenhuma PK foi encontrada, retorna 0 para começar com a primeira chave.
+        return 0;
+    }
+
+    return maiorPK;
+}
+
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Inicializa os atributos necessários para a verificação de FK e PK.
     Parametros: Objeto da tabela, Tabela, Buffer e nome da tabela.
@@ -342,7 +415,7 @@ int finalizaInsert(char *nome, column *c){
         		raiz = constroi_bplus(arquivoIndice);
                 free(arquivoIndice);
         		if(raiz != NULL) {
-        			encontrou = buscaChaveBtree(raiz, temp->valorCampo);
+        			encontrou = buscaChaveBtree(raiz, temp->valorCampo); 
         			if (encontrou) {
         				printf("ERROR: duplicate key value violates unique constraint \"%s_pkey\"\nDETAIL:  Key (%s)=(%s) already exists.\n",nome,temp->nomeCampo,temp->valorCampo);
         				free(auxT); // Libera a memoria da estrutura.
@@ -542,6 +615,12 @@ void insert(rc_insert *s_insert) {
 
 	abreTabela(s_insert->objName, &objeto, &tabela->esquema); //retorna o esquema para a insere valor
 	strcpylower(tabela->nome, s_insert->objName);
+
+  // printf("TableName <--------- %s\n", tabela->nome);
+
+  // printf("ColumnName <--------- %s\n", *s_insert->columnName);
+
+  // printf("values <--------- %s\n", *s_insert->values);
 
 	if(s_insert->columnName != NULL){
 		if (allColumnsExists(s_insert, tabela)){
@@ -800,6 +879,7 @@ Lista *op_select(inf_select *select) {
     free(esquema);
     return NULL;
   }
+  //-------------------------
   int i,j,k;
   char abortar = 0;
   Lista *tupla = novaLista(NULL),
@@ -835,6 +915,8 @@ Lista *op_select(inf_select *select) {
       tupla->prim = tupla->ult = NULL;
     }
   }
+  // printf("Tamanho do resultado <---------- %d \n", resultado->tam);
+
   if(abortar){
     resultado = NULL;
   }
