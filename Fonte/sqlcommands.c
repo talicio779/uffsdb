@@ -1195,6 +1195,17 @@ void createTable(rc_insert *t) {
   		size = sizeof(double);
     else if(t->type[i] == 'C')
   		size = sizeof(char);
+
+    if(t->attribute[i] == PK) {
+        PKcount++;
+        if(PKcount > 1) {
+            printf("multiple primary keys for table \"%s\" are not allowed\n",t->objName);
+            free(tableName);
+            freeTable(tab);
+            return;
+        }
+    }
+    
   	if(t->attribute[i] == FK){
   		strncpylower(fkTable, t->fkTable[i], TAMANHO_NOME_TABELA);
   		strncpylower(fkColumn,t->fkColumn[i], TAMANHO_NOME_CAMPO);
