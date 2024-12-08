@@ -83,12 +83,14 @@ char *getInsertedValue(rc_insert *s_insert, char *columnName, table *tabela) {
 			return s_insert->values[i];
 
   int maxPK = getMaxPrimaryKey(tabela->nome);
-
 	tipo = retornaTamanhoTipoDoCampo(columnName, tabela);
 	noValue = (char *)malloc(50); 
 
 	if (tipo == 'I') {
-		sprintf(noValue, "%d", maxPK + 1);
+    if(verifyFK(tabela->nome, columnName))
+		  sprintf(noValue, "%d", maxPK + 1);
+    else
+      sprintf(noValue, "0");
 	} else if (tipo == 'D') {
 		sprintf(noValue, "0.0");
 	} else {
@@ -1186,6 +1188,7 @@ void createTable(rc_insert *t) {
     return;
   }
   int i;
+  int PKcount = 0;
   for(i = 0; i < t->N; i++){
     if(t->type[i] == 'S')
   		size = atoi(t->values[i]);
