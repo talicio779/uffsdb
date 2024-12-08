@@ -596,7 +596,7 @@ void insert(rc_insert *s_insert) {
 }
 
 //select * from t4;
-int validaProj(Lista *proj, column *colunas, int qtdColunas){
+int validaProj(Lista *proj, column *colunas, int qtdColunas, int *indiceProj){
     if(proj->tam == 1 && ((char *)proj->prim->inf)[0] == '*'){
         free(rmvNodoPtr(proj, proj->prim));
         proj->prim = proj->ult = NULL;
@@ -608,14 +608,16 @@ int validaProj(Lista *proj, column *colunas, int qtdColunas){
         return 1;
     }
 
-    char *validar = malloc(sizeof(char)*proj->tam);
+    char *validar = malloc(sizeof(char) * proj->tam);
     memset(validar, 0, proj->tam); // Inicializa o vetor de validação com 0
 
     for(int j = 0; j < qtdColunas; j++){
         int k = 0;
-        for(Nodo *it = proj->prim; it; it = it->prox, k++){
-            if (strcmp((char *)it->inf, colunas[j].nomeCampo) == 0) validar[k] = 1;       // Marca a projeção como válida
-        }
+        for(Nodo *it = proj->prim; it; it = it->prox, k++)
+            if (strcmp((char *)it->inf, colunas[j].nomeCampo) == 0){
+                validar[j] = 1;   
+                indiceProj[j] = k;
+            }
     }
     int k = 0;
     for(Nodo *it = proj->prim; it; it = it->prox, k++){
@@ -723,9 +725,10 @@ void printConsulta(Lista *p,Lista *l){
     printf("\n %d Linha%s.\n", l->tam, l->tam == 1 ? "" : "s");
     }
 
-void adcResultado(Lista *resultado, Lista *tupla){
+void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColunasTab, int qtdColunasProj){
     adcNodo(resultado, resultado->ult, (void *)novaLista(NULL));
     Lista *tuplaRes = (Lista *)(resultado->ult->inf);
+    inf_where **listNw = (inf_where **)malloc(sizeof(inf_where) * qtdColunasTab);
     int ci = 0;
 
     for(Nodo *n1 = tupla->prim; n1; n1 = n1->prox, ci++){
@@ -755,8 +758,16 @@ void adcResultado(Lista *resultado, Lista *tupla){
             n = (double *)(c->valorCampo);
             nw->token = (void *)n;
         }
-        adcNodo(tuplaRes, tuplaRes->ult, (void *)nw);
+        listNw[ci] = nw;
     }
+    for(int i = 0; i < qtdColunasProj; i++)
+        for(int j = 0; j < qtdColunasTab; j++)
+            if(indiceProj[i] == j) {
+                adcNodo(tuplaRes, tuplaRes->ult, (void *)listNw[j]);
+                break;
+            }
+
+    free(listNw);
 }
 
 Lista *op_select(inf_select *select) {
@@ -794,15 +805,19 @@ Lista *op_select(inf_select *select) {
         return NULL;
     }
 
-    if(!validaProj(select->proj, pagina, objeto.qtdCampos)){
+    int *indiceProj = (int *)malloc(sizeof(int) * select->proj->tam);
+    int qtdCamposProj =  ((char *)select->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : select->proj->tam;
+    if(!validaProj(select->proj, pagina, qtdCamposProj, indiceProj)){
         free(bufferpoll);
         free(esquema);
+        free(indiceProj);
         return NULL;
     }
 
     if(!validaColsWhere(select->tok, pagina, objeto.qtdCampos)){
         free(bufferpoll);
         free(esquema);
+        free(indiceProj);
         return NULL;
     }
     int j,k;
@@ -814,10 +829,11 @@ Lista *op_select(inf_select *select) {
             printf("ERROR: could not open the table.\n");
             free(bufferpoll);
             free(esquema);
+            free(indiceProj);
             return NULL;
         }
         for(k = j = 0; !abortar && k < bufferpoll[p].nrec; k++){
-            for(int i = 0; i < select->proj->tam; i++, j++)
+            for(int i = 0; i < objeto.qtdCampos; i++, j++)
                 adcNodo(tupla, tupla->ult, (void *)(&pagina[j]));
             char sat = 0;
 
@@ -831,7 +847,7 @@ Lista *op_select(inf_select *select) {
             }
             else sat = 1;
 
-            if(!abortar && sat) adcResultado(resultado, tupla);
+            if(!abortar && sat) adcResultado(resultado, tupla, indiceProj, objeto.qtdCampos, qtdCamposProj);
 
             for(Nodo *n1 = tupla->prim, *n2; n1; n1 = n2){
                 n2 = n1->prox;
@@ -842,9 +858,9 @@ Lista *op_select(inf_select *select) {
             tupla->prim = tupla->ult = NULL;
         }
     }
-    if(abortar){
-        resultado = NULL;
-    }
+    if(abortar) resultado = NULL;
+    
+    free(indiceProj); indiceProj = NULL;
     free(tupla); tupla = NULL;
     free(esquema); esquema = NULL;
     free(bufferpoll); bufferpoll = NULL;
