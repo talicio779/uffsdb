@@ -290,7 +290,7 @@ int interface() {
                         case OP_SELECT:
                             resultado = op_select(&SELECT);
                             if(resultado){
-                              printConsulta(SELECT.proj,resultado);
+                              printConsulta(SELECT.proj, resultado);
                               resultado = NULL;
                             }
                             break;

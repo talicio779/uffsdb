@@ -601,6 +601,7 @@ int validaProj(Lista *proj, column *colunas, int qtdColunas, int *indiceProj){
         free(rmvNodoPtr(proj, proj->prim));
         proj->prim = proj->ult = NULL;
         for(int j = 0; j < qtdColunas; j++){
+            indiceProj[j] = j;
             char *str = malloc(sizeof(char) * strlen(colunas[j].nomeCampo));
             strcpy(str, colunas[j].nomeCampo);
             adcNodo(proj, proj->ult, str);
@@ -611,15 +612,16 @@ int validaProj(Lista *proj, column *colunas, int qtdColunas, int *indiceProj){
     char *validar = malloc(sizeof(char) * proj->tam);
     memset(validar, 0, proj->tam); // Inicializa o vetor de validação com 0
 
-    for(int j = 0; j < qtdColunas; j++){
-        int k = 0;
-        for(Nodo *it = proj->prim; it; it = it->prox, k++)
+    int i = 0;
+    for(Nodo *it = proj->prim; it; it = it->prox, i++){    
+        for(int j = 0; j < qtdColunas; j++){
             if (strcmp((char *)it->inf, colunas[j].nomeCampo) == 0){
-                validar[j] = 1;   
-                indiceProj[j] = k;
+                validar[i] = 1;   
+                indiceProj[i] = j;
             }
+        }
     }
-    int k = 0;
+    k = 0;
     for(Nodo *it = proj->prim; it; it = it->prox, k++){
         if(!validar[k]){
             free(validar);
@@ -676,13 +678,13 @@ int validaColsWhere(Lista *tok,column *colunas,int qtdColunas){
   return 1;
 }
 
-void printConsulta(Lista *p,Lista *l){
-    if(!l->tam){
+void printConsulta(Lista *proj, Lista *result){
+    if(!result->tam){
         printf("\n 0 Linhas.\n");
         return;
     }
     //cabecalho
-    for(Nodo *j = ((Lista *)(l->prim->inf))->prim, *i = p->prim; j; j = j->prox, i = i->prox){
+    for(Nodo *j = ((Lista *)(result->prim->inf))->prim, *i = proj->prim; j; j = j->prox, i = i->prox){
         inf_where *jw = (inf_where *)(j->inf);
         
         if(jw->id == (int)'S') printf(" %-20s ", (char *)(i->inf));
@@ -691,13 +693,13 @@ void printConsulta(Lista *p,Lista *l){
         if(j->prox) printf("|");
     }
     printf("\n");
-    for(Nodo *j = ((Lista *)(l->prim->inf))->prim; j; j = j->prox){
+    for(Nodo *j = ((Lista *)(result->prim->inf))->prim; j; j = j->prox){
         inf_where *jw = (inf_where *)(j->inf);
         printf("%s",(jw->id == (int)'S') ? "----------------------" : "------------");
         if(j->prox) printf("+");
     }
     printf("\n");//fim do cabecalho
-    for(Nodo *i = l->prim; i; i = i->prox){
+    for(Nodo *i = result->prim; i; i = i->prox){
         Lista *li = (Lista *)(i->inf);
 
         for(Nodo *j = li->prim; j; j = j->prox){
@@ -722,16 +724,16 @@ void printConsulta(Lista *p,Lista *l){
         }
         printf("\n");
     }
-    printf("\n %d Linha%s.\n", l->tam, l->tam == 1 ? "" : "s");
+    printf("\n %d Linha%s.\n", result->tam, result->tam == 1 ? "" : "s");
     }
 
 void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColunasTab, int qtdColunasProj){
     adcNodo(resultado, resultado->ult, (void *)novaLista(NULL));
     Lista *tuplaRes = (Lista *)(resultado->ult->inf);
     inf_where **listNw = (inf_where **)malloc(sizeof(inf_where) * qtdColunasTab);
-    int ci = 0;
+    int i = 0;
 
-    for(Nodo *n1 = tupla->prim; n1; n1 = n1->prox, ci++){
+    for(Nodo *n1 = tupla->prim; n1; n1 = n1->prox, i++){
         column *c = (column *)(n1->inf);
             
         inf_where *nw = malloc(sizeof(inf_where));
@@ -758,8 +760,9 @@ void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColuna
             n = (double *)(c->valorCampo);
             nw->token = (void *)n;
         }
-        listNw[ci] = nw;
+        listNw[i] = nw;
     }
+    
     for(int i = 0; i < qtdColunasProj; i++)
         for(int j = 0; j < qtdColunasTab; j++)
             if(indiceProj[i] == j) {
@@ -806,8 +809,7 @@ Lista *op_select(inf_select *select) {
     }
 
     int *indiceProj = (int *)malloc(sizeof(int) * select->proj->tam);
-    int qtdCamposProj =  ((char *)select->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : select->proj->tam;
-    if(!validaProj(select->proj, pagina, qtdCamposProj, indiceProj)){
+    if(!validaProj(select->proj, pagina, objeto.qtdCampos, indiceProj)){
         free(bufferpoll);
         free(esquema);
         free(indiceProj);
@@ -822,6 +824,7 @@ Lista *op_select(inf_select *select) {
     }
     int j,k;
     char abortar = 0;
+    int qtdCamposProj =  ((char *)select->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : select->proj->tam;
     Lista *tupla = novaLista(NULL), *resultado = novaLista(NULL);
     for(int p = 0; !abortar && x; x -= bufferpoll[p++].nrec){
         pagina = getPage(bufferpoll, esquema, objeto, p);
