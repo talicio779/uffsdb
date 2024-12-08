@@ -40,10 +40,9 @@
 (?i:DATABASE)					return DATABASE;
 (?i:DROP)						return DROP;
 (?i:CONTRIBUTORS)               return CONTR;
+(?i:IMPLEMENT)                  return IMPLEMENT;
 help							return HELP;
-notImplemented					return NOTIMMPLEMENTED;
 [\\][h]							return HELP;
-[\\][h]+[^\n]*					{invalidCommand(yytext);};
 [\\][\?]						return HELP;
 (?i:CLEAR)						return CLEAR;
 

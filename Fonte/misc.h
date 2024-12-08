@@ -7,7 +7,7 @@
 int cabecalho(tp_table *, int );
 int drawline(tp_buffer *, tp_table *, struct fs_objects, int , int);
 void help();
-void notImplemented();
+void implement();
 void contr();
 int objcmp(char *, char *);
 void strcpylower(char *, char *);
