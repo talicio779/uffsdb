@@ -221,7 +221,12 @@ double get_inteiro(char v[]) {
 }
 
 double convertD(char u[]) {
-    return get_inteiro(u)+get_decimal(u);
+    int multiplicador = 1;
+    if(u[0] == '-'){
+        multiplicador = -1;
+        u++;
+    }
+    return get_inteiro(u)+get_decimal(u)*multiplicador;
     //Soma inteiro com decimal.ss
 }
 ///
