@@ -59,7 +59,7 @@ column * getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, 
     if(buffer[page].nrec == 0) //Essa página não possui registros
         return ERRO_PARAMETRO;
 
-    column *colunas = (column *)malloc(sizeof(column)*objeto.qtdCampos*(buffer[page].nrec)); //Aloca a quantidade de campos necessária
+    column *colunas = (column *)malloc(sizeof(column) * objeto.qtdCampos * (buffer[page].nrec)); //Aloca a quantidade de campos necessária
 
     if(!colunas)
         return ERRO_DE_ALOCACAO;
@@ -73,8 +73,7 @@ column * getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, 
 
     while(i < buffer[page].position){
         t=0;
-        if(j >= objeto.qtdCampos)
-            j=0;
+        if(j >= objeto.qtdCampos) j=0;
 
         colunas[h].valorCampo = (char *)malloc(sizeof(char)*campos[j].tam+1);
         memset(colunas[h].valorCampo, '\0', campos[j].tam+1);

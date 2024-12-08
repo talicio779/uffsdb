@@ -675,55 +675,60 @@ int validaColsWhere(Lista *tok,column *colunas,int qtdColunas){
 }
 
 void printConsulta(Lista *p,Lista *l){
-  if(!l->tam){
-    printf("\n 0 Linhas.\n");
-    return;
-  }
-  //cabecalho
-  for(Nodo *j = ((Lista *)(l->prim->inf))->prim,
-           *i = p->prim; j; j = j->prox,i = i->prox){
-    inf_where *jw = (inf_where *)(j->inf);
-    if(jw->id == (int)'S') printf(" %-20s ", (char *)(i->inf));
-    else printf(" %-10s ", (char *)(i->inf));
-    if(j->prox) printf("|");
-  }
-  printf("\n");
-  for(Nodo *j = ((Lista *)(l->prim->inf))->prim; j; j = j->prox){
-    inf_where *jw = (inf_where *)(j->inf);
-    printf("%s",(jw->id == (int)'S') ? "----------------------"
-                                     : "------------");
-    if(j->prox) printf("+");
-  }
-  printf("\n");//fim do cabecalho
-  for(Nodo *i = l->prim; i; i = i->prox){
-    Lista *li = (Lista *)(i->inf);
-    for(Nodo *j = li->prim; j; j = j->prox){
-      inf_where *ij = (inf_where *)(j->inf);
-      if(ij->id == (int)'S')
-        printf(" %-20s ", (char *)ij->token);
-      else if(ij->id == (int)'I'){
-        int *n = (int *)(ij->token);
-        printf(" %-10d ", *n);
-      }
-      else if(ij->id == (int)'C')
-        printf(" %-10c ", *(char *)ij->token);
-      else if(ij->id == (int)'D'){
-        double *n = (double *)(ij->token);
-        printf(" %-10f ", *n);
-      }
-      if(j->prox) printf("|");
+    if(!l->tam){
+        printf("\n 0 Linhas.\n");
+        return;
+    }
+    //cabecalho
+    for(Nodo *j = ((Lista *)(l->prim->inf))->prim, *i = p->prim; j; j = j->prox, i = i->prox){
+        inf_where *jw = (inf_where *)(j->inf);
+        
+        if(jw->id == (int)'S') printf(" %-20s ", (char *)(i->inf));
+        else printf(" %-10s ", (char *)(i->inf));
+        
+        if(j->prox) printf("|");
     }
     printf("\n");
-  }
-  printf("\n %d Linha%s.\n",l->tam,l->tam == 1 ? "" : "s");
-}
+    for(Nodo *j = ((Lista *)(l->prim->inf))->prim; j; j = j->prox){
+        inf_where *jw = (inf_where *)(j->inf);
+        printf("%s",(jw->id == (int)'S') ? "----------------------" : "------------");
+        if(j->prox) printf("+");
+    }
+    printf("\n");//fim do cabecalho
+    for(Nodo *i = l->prim; i; i = i->prox){
+        Lista *li = (Lista *)(i->inf);
+
+        for(Nodo *j = li->prim; j; j = j->prox){
+            inf_where *ij = (inf_where *)(j->inf);
+
+            if(ij->id == (int)'S')
+                printf(" %-20s ", (char *)ij->token);
+
+            else if(ij->id == (int)'I'){
+                int *n = (int *)(ij->token);
+                printf(" %-10d ", *n);
+            }
+
+            else if(ij->id == (int)'C')
+                printf(" %-10c ", *(char *)ij->token);
+                
+            else if(ij->id == (int)'D'){
+                double *n = (double *)(ij->token);
+                printf(" %-10f ", *n);
+            }
+            if(j->prox) printf("|");
+        }
+        printf("\n");
+    }
+    printf("\n %d Linha%s.\n", l->tam, l->tam == 1 ? "" : "s");
+    }
 
 void adcResultado(Lista *resultado, Lista *tupla){
     adcNodo(resultado, resultado->ult, (void *)novaLista(NULL));
     Lista *tuplaRes = (Lista *)(resultado->ult->inf);
     int ci = 0;
 
-    for(Nodo *n1 = tupla->prim; n1; n1 = n1->prox,ci++){
+    for(Nodo *n1 = tupla->prim; n1; n1 = n1->prox, ci++){
         column *c = (column *)(n1->inf);
             
         inf_where *nw = malloc(sizeof(inf_where));
@@ -795,12 +800,12 @@ Lista *op_select(inf_select *select) {
         return NULL;
     }
 
-    if(!validaColsWhere(select->tok,pagina,objeto.qtdCampos)){
+    if(!validaColsWhere(select->tok, pagina, objeto.qtdCampos)){
         free(bufferpoll);
         free(esquema);
         return NULL;
     }
-    int i,j,k;
+    int j,k;
     char abortar = 0;
     Lista *tupla = novaLista(NULL), *resultado = novaLista(NULL);
     for(int p = 0; !abortar && x; x -= bufferpoll[p++].nrec){
@@ -812,7 +817,7 @@ Lista *op_select(inf_select *select) {
             return NULL;
         }
         for(k = j = 0; !abortar && k < bufferpoll[p].nrec; k++){
-            for(i = 0; i < objeto.qtdCampos; i++, j++)
+            for(int i = 0; i < select->proj->tam; i++, j++)
                 adcNodo(tupla, tupla->ult, (void *)(&pagina[j]));
             char sat = 0;
 
