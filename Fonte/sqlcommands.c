@@ -621,9 +621,9 @@ int validaProj(Lista *proj, column *colunas, int qtdColunas, int *indiceProj){
             }
         }
     }
-    k = 0;
-    for(Nodo *it = proj->prim; it; it = it->prox, k++){
-        if(!validar[k]){
+    i = 0;
+    for(Nodo *it = proj->prim; it; it = it->prox, i++){
+        if(!validar[i]){
             free(validar);
             printf("A coluna da projecao %s não pertence a tabela.\n",(char *)it->inf);
             return 0;
