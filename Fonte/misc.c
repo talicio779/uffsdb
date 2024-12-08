@@ -143,6 +143,10 @@ void help() {
     printf("\t\t\t\t\t\t  Não é possível fazer DROP deste índice.\n");
 }
 ////
+void notImplemented() {
+    printf("Not implemented yet.\n");
+}
+////
 int objcmp(char *obj, char *str) {
 	int i;
   char a,b;

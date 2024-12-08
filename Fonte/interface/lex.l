@@ -41,6 +41,7 @@
 (?i:DROP)						return DROP;
 (?i:CONTRIBUTORS)               return CONTR;
 help							return HELP;
+notImplemented					return NOTIMMPLEMENTED;
 [\\][h]							return HELP;
 [\\][h]+[^\n]*					{invalidCommand(yytext);};
 [\\][\?]						return HELP;
