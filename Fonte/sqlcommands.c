@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 ////
 #ifndef FBTREE // includes only if this flag is not defined (preventing duplication)
    #include "btree.h"
@@ -467,6 +468,18 @@ int finalizaInsert(char *nome, column *c){
         }
         else if (auxT[t].tipo == 'I'){ // Grava um dado do tipo inteiro.
           i = 0;
+          //Variável de controle para validação do conteúdo de auxC->valorCampo (char*)
+          long parsedInputToCheckInteger;
+          sscanf(auxC->valorCampo, "%ld", &parsedInputToCheckInteger);
+          if (parsedInputToCheckInteger < INT32_MIN || parsedInputToCheckInteger > INT32_MAX){
+            printf("ERROR: invalid integer length.\n");
+			      free(tab); // Libera a memoria da estrutura.
+			      free(tab2); // Libera a memoria da estrutura.
+			      free(auxT); // Libera a memoria da estrutura.
+			      free(temp); // Libera a memoria da estrutura.
+			      fclose(dados);
+            return ERRO_NO_TAMANHO_INTEGER;
+          }
           while (i < strlen(auxC->valorCampo)){
             // Valida que o dado inserido é um número (ASCII entre 48~57) e evita erro quando tem carctere de nº negativo (45)
             if((auxC->valorCampo[i] >= 48 && auxC->valorCampo[i] <= 57) || (auxC->valorCampo[i] == 45 && strlen(auxC->valorCampo) > 1)){
