@@ -19,22 +19,35 @@ elas servem para guardar dados dos tokens, informações do select e para auxili
 Verifica se o connectDb retornou [[Macros#Tratamento de erros|Success]]
 ## setObjName
 
-O setObjName primeiro verifica que o mode é diferente de 0, ou seja, se é o modo não é nulo. Caso seja um modo não nulo, o nome da tabela é salvo em caixa baixa pelo [[misc#strcpylower|strcpylower]] no [[#Globais|GLOBAL_DATA]] e soma mais um passo "step".
+A função salva o nome da tabela na GLOBAL_DATA em caixa baixa e incrementa o step.
+
+---
+### Assinatura
 
 ```C
-void setObjName(char **nome) {
-	if (GLOBAL_PARSER.mode != 0) {
-		GLOBAL_DATA.objName = malloc(sizeof(char)*((strlen(*nome)+1)));
-		strcpylower(GLOBAL_DATA.objName, *nome);
-		GLOBAL_DATA.objName[strlen(*nome)] = '\0';
-		GLOBAL_PARSER.step++;
-	}
-}
-``` 
+void setObjName(char **nome) 
+```
+### Parâmetro(s) / Retorno
 
-Detalhe: a função [[misc#strcpylower|strcpylower]] já coloca o '\0', não sei por que colocam o '\0' depois da chamada desta função.
+- `nome` = o nome da tabela
+
+Sem retorno
+___
+### Fluxo
+
+1. **Verifica se o modo não está zerado**: caso verdadeiro, salva o nome da tabela em caixa baixa e incrementa o step.
+___
+### Dependências
+
+- Função Dependente: **`não possui`**
+- Função Auxiliar: [[misc#strcpylower|strcpylower]].
+___
+### Implementação
+
+A implementação está em [[setObjName]].
 
 ## setColumnInsert  
+
 A função setColumnInsert recebe um ponteiro para um ponteiro.
 
 Ela inicia fazendo o realoc do collumn.name para caber +1 ponteiro do tipo char.
@@ -102,26 +115,58 @@ GLOBAL_PARSER.val_count++;
 
 
 ## limparLista
+#erro
+A função libera memória de uma [[Utility#Lista|Lista]].
 
-Função para liberar a memória de uma [[Utility#Lista|Lista]] duplamente encadeada.  
-Percorre todos os nós, removendo-os com [[Utility#rmvNodoPtr|rmvNodoPtr]], e libera a lista.
+Obs: acredito que deveria estar em utility.c
+___
+### Assinatura
 
 ```C
-void limparLista(Lista *l){
-	Nodo *k = l->prim,*j;
-	while(k){
-		j = k->prox;
-		free( rmvNodoPtr(l,k) );
-		k = j;
-	}
-	l->prim = l->ult = NULL;
-	free(l);
-}
+void limparLista(Lista *l)
 ```
----
-# resetSelect
+### Parâmetro(s) / Retorno
 
-Função que reseta a estrutura global **`SELECT`**, liberando memória associada à tabela, tokens e projeções.  
+* L = uma string para ser liberada. 
+
+Sem retorno
+
+----
+### Fluxo
+
+1. **Percorre a lista liberando os nós.** 
+---
+### Dependências
+
+- Função Dependente: [[#resetSelect]].
+- Função Auxiliar: [[Utility#rmvNodoPtr|rmvNodoPtr]].
+
+---
+### Implementação
+
+A implementação está em [[limparLista]].
+
+___
+## resetSelect
+
+Função que atribui `null` à variável global **`SELECT`**, liberando toda a memória associada.
+
+### Assinatura
+
+```C
+void resetSelect()
+```
+
+---
+### Dependências
+
+- Função Dependente: [[#clearGlobalStructs]].
+- Função Auxiliar: [[#limparLista]].
+
+---
+### Implementação
+
+A implementação está em [[limparLista]].
 
 Utiliza [[#limparLista]] para liberar listas dentro de `SELECT`.
 
@@ -139,70 +184,31 @@ SELECT.proj = NULL;
 ```
 
 ---
-# clearGlobalStructs
+## clearGlobalStructs
 
-Função que reseta todas as variáveis globais relacionadas ao parser e limpa a memória alocada:
+A Função limpa todas as variáveis globais relacionadas ao parser.
+___
+### Assinatura
+```C
+void clearGlobalStructs()
+````
 
-- Chama [[#resetSelect|resetSelect]] para zerar o `SELECT`.
-- Libera a memória de `GLOBAL_DATA` e redefine seus campos para `NULL`. Os campos **`type`** e **`attribute`** são realocados como `char` e `int`, respectivamente.
-- Destrói o analisador léxico com `yylex_destroy`.
-- Reseta os contadores e flags de `GLOBAL_PARSER`.
-
-```c
-
-int i;
-resetSelect();
-if (GLOBAL_DATA.objName) {
-	free(GLOBAL_DATA.objName);
-	GLOBAL_DATA.objName = NULL;
-}
- 
-for (i = 0; i < GLOBAL_DATA.N; i++ ) {
-	if (GLOBAL_DATA.columnName)
-		free(GLOBAL_DATA.columnName[i]);
-	if (GLOBAL_DATA.values)
-		free(GLOBAL_DATA.values[i]);
-	if (GLOBAL_DATA.fkTable)
-		free(GLOBAL_DATA.fkTable[i]);
-	if (GLOBAL_DATA.fkColumn)
-		free(GLOBAL_DATA.fkColumn[i]);
-}
-
-free(GLOBAL_DATA.columnName);
-GLOBAL_DATA.columnName = NULL;
-
-free(GLOBAL_DATA.values);
-GLOBAL_DATA.values = NULL;
-
-free(GLOBAL_DATA.fkTable);
-GLOBAL_DATA.fkTable = NULL;
-
-free(GLOBAL_DATA.fkColumn);
-GLOBAL_DATA.fkColumn = NULL;
-
-free(GLOBAL_DATA.type);
-GLOBAL_DATA.type = (char *)malloc(sizeof(char));
-
-free(GLOBAL_DATA.attribute);
-GLOBAL_DATA.attribute = (int *)malloc(sizeof(int));
-  
-yylex_destroy();
+### Fluxo
+1. **Zera a SELECT**: usa a função [[#resetSelect]] para limpar a memória.
+2. Zera a GLOBAL_DATA:  Libera a memória de `GLOBAL_DATA` e redefine seus campos para `NULL`. Os campos **`type`** e **`attribute`** são realocados como `char` e `int`, respectivamente.
+3. Destrói o analisador léxico com `yylex_destroy`.
+4. **Zera a GLOBAL_PARSER**: Reseta os contadores e flags de `GLOBAL_PARSER`.
+___
+### Dependências
+- Função Dependente: [[#Interface]]
+- Função Auxiliar: [[#resetSelect]]
 
 
-GLOBAL_DATA.N = 0;
-GLOBAL_PARSER.mode = 0;
-GLOBAL_PARSER.parentesis = 0;
-GLOBAL_PARSER.noerror = 1;
-GLOBAL_PARSER.col_count = 0;
-GLOBAL_PARSER.val_count = 0;
-GLOBAL_PARSER.step = 0;
-
-}
-```
-# setMode
+## setMode
 
 O setMode altera o comando do global parser com base nos comandos definidos em [[Constantes#Parser|Arquivo .h]] e incrementa o passo.
 
+-- 
 ```c 
 void setMode(int mode) { 
 	GLOBAL_PARSER.mode = mode;
@@ -214,9 +220,16 @@ void setMode(int mode) {
 ---
 # Interface
 
-## Set das variáveis
+Função responsável por ler os comandos do usuário.
 
-- Chama a [[#clearGlobalStructs]];
+## Assinatura
+```C
+int interface()
+```
+## Fluxo
+
+- Inicia uma thread para a limpar as variáveis global com [[#clearGlobalStructs]] 
+- 
 - Inicia uma variavel **`resultado`** do tipo [[Utility#**Lista**|lista]];
 - Chama a connect("uffsdb") iniciando no banco padrão;
 - Inicia tok e proj da SELECT;

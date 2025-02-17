@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "42c438f2cd27a2b2",
+        "id": "6ee109bcb5f7e066",
         "type": "tabs",
         "children": [
           {
-            "id": "1479a3e2d2eca05a",
+            "id": "70211d95abef20a0",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "interface/Parser.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Parser"
+              "title": "New tab"
             }
           }
         ]
@@ -40,7 +36,8 @@
             "state": {
               "type": "file-explorer",
               "state": {
-                "sortOrder": "alphabetical"
+                "sortOrder": "alphabetical",
+                "autoReveal": false
               },
               "icon": "lucide-folder-closed",
               "title": "Files"
@@ -138,11 +135,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "misc.c.md"
-              },
+              "state": {},
               "icon": "lucide-list",
-              "title": "Outline of misc.c"
+              "title": "Outline"
             }
           }
         ],
@@ -164,25 +159,34 @@
       "vscode-editor:Create Code File": false
     }
   },
-  "active": "1479a3e2d2eca05a",
+  "active": "70211d95abef20a0",
   "lastOpenFiles": [
-    "interface/yacc.y.md",
-    "Implementação/database/createDB.md",
-    "database.md",
-    "Macros.md",
-    "types.md",
-    "uffsdb.md",
-    "Implementação/database/dbInit.md",
-    "misc.md",
-    "Utility.md",
+    "descricao/interface/interface.md",
+    "descricao/interface/Parser.md",
+    "descricao/interface/yacc.y.md",
+    "descricao/database.md",
+    "descricao/Utility.md",
+    "descricao",
+    "descricao/database",
+    "descricao/types.md",
+    "descricao/Macros.md",
+    "descricao/Constantes.md",
+    "Implementação/parser/setObjName.md",
+    "Implementação/parser/limparLista.md",
+    "Implementação/parser/clearGlobalStructs.md",
     "Implementação/main.md",
-    "Constantes.md",
-    "Implementação/misc/strcpylower.md",
-    "Implementação/misc/objcmp.md",
+    "Implementação/parser/resetSelect.md",
     "Untitled.md",
+    "descricao/misc.md",
+    "Implementação/misc/objcmp.md",
+    "descricao/uffsdb.md",
+    "Implementação/database/createDB.md",
+    "Implementação/database/dbInit.md",
+    "Implementação/parser",
+    "Untitled 1",
+    "data_base.md",
+    "Implementação/misc/strcpylower.md",
     "Implementação/misc",
-    "Untitled",
-    "interface/Parser.md",
     "Implementação/database",
     "Implementação",
     "Untitled.canvas",
@@ -195,11 +199,7 @@
     "Pasted image 20241129135946.png",
     "Arquivos.md",
     "sqlcommands.md",
-    "interface/Insert.md",
-    "types 1.md",
     "types",
-    "interface/parser.c",
-    "interface",
-    "AWEF.md"
+    "interface/parser.c"
   ]
 }

@@ -30,7 +30,7 @@ Retorna void.
 ## Dependências
 
 - Função Dependente: [[#dbInit]].
-- Função Auxiliar:
+- Funções Auxiliares:
 	- [[misc#strcpylower|strcpylower]]
 	- [[misc#objcmp|objcpm]]
 - Types:
