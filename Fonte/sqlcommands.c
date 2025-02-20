@@ -244,7 +244,7 @@ int verificaChavePK(char *nomeTabela, column *c, char *nomeCampo, char *valorCam
     }
 
     erro = SUCCESS;
-    for(x = 0; erro == SUCCESS; x++)
+    for(x = 0; erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS; x++)
         erro = colocaTuplaBuffer(bufferpoll, x, tabela, objeto);
 
     page = 0;
