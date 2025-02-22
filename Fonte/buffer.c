@@ -133,13 +133,13 @@ column * excluirTuplaBuffer(tp_buffer *buffer, tp_table *campos, struct fs_objec
 }
 // INSERE UMA TUPLA NO BUFFER!
 char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma tupla do disco a partir do valor de from
-    int tamTpl = tamTupla(campos, objeto);
+    int tamTpl = tamTupla(campos, objeto) + 1; // +1 byte para flag de validade
     char *linha=(char *)malloc(sizeof(char)*tamTpl);
     memset(linha, '\0', tamTpl);
 
     FILE *dados;
     from = from * tamTpl;
-	  char directory[LEN_DB_NAME_IO];
+	char directory[LEN_DB_NAME_IO];
     strcpy(directory, connected.db_directory);
     strcat(directory, objeto.nArquivo);
 
@@ -150,16 +150,24 @@ char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma 
         return ERRO_DE_LEITURA;
     }
 
-    fseek(dados, from, 1);
-    if(fgetc (dados) != EOF){
-      fseek(dados, -1, 1);
-      fread(linha, sizeof(char), tamTpl, dados); //Traz a tupla inteira do arquivo
+    fseek(dados, from, SEEK_CUR);
+    if(fgetc (dados) == EOF){
+        fclose(dados);
+        free(linha);
+        return ERRO_DE_LEITURA;
     }
-    else {       //Caso em que o from possui uma valor inválido para o arquivo de dados
-      fclose(dados);
-      free(linha);
-      return ERRO_DE_LEITURA;
+    
+    fseek(dados, -1, 1);
+    fread(linha, sizeof(char), tamTpl, dados); //Traz a tupla inteira do arquivo
+
+    if(!linha[0]){
+        fclose(dados);
+        free(linha);
+        return TUPLA_DELETADA;
     }
+
+    memmove(linha, linha + 1, sizeof(char) * (tamTpl - 1));
+    char *temp = realloc(linha,  sizeof(char) * (tamTpl - 1));
 
     fclose(dados);
     return linha;
