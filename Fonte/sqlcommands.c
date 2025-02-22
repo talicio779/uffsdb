@@ -799,7 +799,7 @@ Lista *op_select(inf_select *select) {
         return NULL;
     }
     int erro = SUCCESS,x;
-    for(x = 0; erro == SUCCESS; x++)
+    for(x = 0; erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS; x++)
         erro = colocaTuplaBuffer(bufferpoll, x, esquema, objeto);
     x--;
     column *pagina = getPage(bufferpoll, esquema, objeto, 0);
