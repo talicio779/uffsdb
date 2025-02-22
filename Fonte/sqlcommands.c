@@ -409,6 +409,8 @@ int finalizaInsert(char *nome, column *c){
       return ERRO_ABRIR_ARQUIVO;
 	   }
     long int offset = ftell(dados);
+
+    fputc(1, dados); // flag para dado não deletado
     for(auxC = c, t = 0; auxC != NULL; auxC = auxC->next, t++){
         if (t >= dicio.qtdCampos) t = 0;
 
