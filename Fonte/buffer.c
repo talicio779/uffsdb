@@ -170,7 +170,7 @@ char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma 
     char *temp = realloc(linha,  sizeof(char) * (tamTpl - 1));
 
     fclose(dados);
-    return linha;
+    return temp;
 }
 /////
 void setTupla(tp_buffer *buffer,char *tupla, int tam, int pos) { //Coloca uma tupla de tamanho "tam" no buffer e na página "pos"
