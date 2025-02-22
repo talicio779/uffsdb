@@ -133,7 +133,7 @@ column * excluirTuplaBuffer(tp_buffer *buffer, tp_table *campos, struct fs_objec
 }
 // INSERE UMA TUPLA NO BUFFER!
 char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma tupla do disco a partir do valor de from
-    int tamTpl = tamTupla(campos, objeto);
+    int tamTpl = tamTupla(campos, objeto) + 1; // +1 byte da validação de dado
     char *linha=(char *)malloc(sizeof(char)*tamTpl);
     memset(linha, '\0', tamTpl);
 
