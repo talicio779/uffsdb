@@ -173,17 +173,16 @@ void setTupla(tp_buffer *buffer,char *tupla, int tam, int pos) { //Coloca uma tu
 //// insere uma tupla no buffer
 int colocaTuplaBuffer(tp_buffer *buffer, int from, tp_table *campos, struct fs_objects objeto){//Define a página que será incluida uma nova tupla
   int i, found;
-  char *tupla = getTupla(campos,objeto,from);
-  if(tupla == ERRO_DE_LEITURA) {
-    free(tupla);
-    return ERRO_LEITURA_DADOS;
-  }
+  char *tupla = getTupla(campos, objeto, from);
+  if(tupla == ERRO_DE_LEITURA)  return ERRO_LEITURA_DADOS;
+  else if (tupla == TUPLA_DELETADA) return ERRO_LEITURA_DADOS_DELETADOS;
 
   for(i = found = 0; !found && i < PAGES; i++) {//Procura pagina com espaço para a tupla.
-    if(SIZE - buffer[i].position > tamTupla(campos, objeto)) {// Se na pagina i do buffer tiver espaço para a tupla, coloca tupla.
-      setTupla(buffer, tupla, tamTupla(campos, objeto), i);
+    int tam = tamTupla(campos, objeto);
+    if(SIZE - buffer[i].position > tam) {// Se na pagina i do buffer tiver espaço para a tupla, coloca tupla.
+      setTupla(buffer, tupla, tam, i);
       found = 1;
-      buffer[i].position += tamTupla(campos, objeto); // Atualiza proxima posição vaga dentro da pagina.
+      buffer[i].position += tam; // Atualiza proxima posição vaga dentro da pagina.
       buffer[i].nrec++;
     }
   }
