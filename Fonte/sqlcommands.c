@@ -410,7 +410,7 @@ int finalizaInsert(char *nome, column *c){
 	   }
     long int offset = ftell(dados);
 
-    fputc(1, dados); // flag para dado não deletado
+    fputc(0, dados); // flag para dado não deletado
     for(auxC = c, t = 0; auxC != NULL; auxC = auxC->next, t++){
         if (t >= dicio.qtdCampos) t = 0;
 
@@ -798,10 +798,12 @@ Lista *op_select(inf_select *select) {
         printf("ERROR: no memory available to allocate buffer.\n");
         return NULL;
     }
-    int erro = SUCCESS,x;
-    for(x = 0; erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS; x++)
-        erro = colocaTuplaBuffer(bufferpoll, x, esquema, objeto);
-    x--;
+    int tuplasLidas, erro = SUCCESS, tuplasRemovidas = 0;
+    for(tuplasLidas = 0; erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS; tuplasLidas++){
+        erro = colocaTuplaBuffer(bufferpoll, tuplasLidas, esquema, objeto);
+        if(erro == ERRO_LEITURA_DADOS_DELETADOS) tuplasRemovidas++;
+    }
+    tuplasLidas-= tuplasRemovidas + 1;
     column *pagina = getPage(bufferpoll, esquema, objeto, 0);
     if(!pagina){
         printf("Tabela vazia.\n");
@@ -828,7 +830,7 @@ Lista *op_select(inf_select *select) {
     char abortar = 0;
     int qtdCamposProj =  ((char *)select->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : select->proj->tam;
     Lista *tupla = novaLista(NULL), *resultado = novaLista(NULL);
-    for(int p = 0; !abortar && x; x -= bufferpoll[p++].nrec){
+    for(int p = 0; !abortar && tuplasLidas; tuplasLidas -= bufferpoll[p++].nrec){
         pagina = getPage(bufferpoll, esquema, objeto, p);
         if(pagina == ERRO_PARAMETRO){
             printf("ERROR: could not open the table.\n");

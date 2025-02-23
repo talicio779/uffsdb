@@ -157,7 +157,7 @@ char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma 
         return ERRO_DE_LEITURA;
     }
     
-    fseek(dados, -1, 1);
+    fseek(dados, -1, SEEK_CUR);
     fread(linha, sizeof(char), tamTpl, dados); //Traz a tupla inteira do arquivo
 
     if(!linha[0]){
