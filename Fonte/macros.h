@@ -30,6 +30,8 @@
 #define ERRO_DE_LEITURA NULL
 #define ERRO_PARAMETRO NULL
 #define TUPLA_DELETADA ((char *) -1)
+#define COLUNA_NULL ((char *) -2)
+
 //tratamento PK e FK
 #define NPK 0
 #define PK 1
@@ -37,7 +39,7 @@
 #define BT 3
 ////
 #define SIZE 512                // Tamanho da página.
-#define PAGES 1024              // Número de páginas.
+#define PAGES 10                // Número de páginas.
 #define TAMANHO_NOME_CAMPO 40   // Tamanho do nome dos campos de uma tabela.
 #define TAMANHO_NOME_TABELA 20  // Tamanho do nome da tabela.
 #define TAMANHO_NOME_ARQUIVO 20 // Tamanho do nome do arquivo.

@@ -66,32 +66,41 @@ column * getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, 
 
     memset(colunas, 0, sizeof(column)*objeto.qtdCampos*(buffer[page].nrec));
 
-    int i=0, j=0, t=0, h=0;
+    int  j=0, t=0, h=0, i=objeto.qtdCampos;
 
     if (!buffer[page].position)
         return colunas;
 
-    while(i < buffer[page].position){
-        t=0;
-        if(j >= objeto.qtdCampos) j=0;
+    char* nullos =(char *)malloc(objeto.qtdCampos * sizeof(char));
+    memcpy(nullos, buffer[page].data, objeto.qtdCampos);
 
+    while(i < buffer[page].position){
+        if(j >= objeto.qtdCampos) {
+            memcpy(nullos, buffer[page].data + i, objeto.qtdCampos);
+            i += objeto.qtdCampos;
+            j=0;
+        }
+        
         colunas[h].valorCampo = (char *)malloc(sizeof(char)*campos[j].tam+1);
-        memset(colunas[h].valorCampo, '\0', campos[j].tam+1);
         colunas[h].tipoCampo = campos[j].tipo;  //Guarda tipo do campo
 
         strcpy(colunas[h].nomeCampo, campos[j].nome); //Guarda nome do campo
 
-        while(t < campos[j].tam){
-            colunas[h].valorCampo[t] = buffer[page].data[i]; //Copia os dados
-            t++;
-            i++;
+        if(!nullos[h]) {
+            colunas[h].valorCampo = COLUNA_NULL;
+            i += campos[j].tam;
+        } else {
+            t=0;
+            while(t < campos[j].tam){
+                colunas[h].valorCampo[t] = buffer[page].data[i]; //Copia os dados
+                t++;
+                i++;
+            }
+            colunas[h].valorCampo[t] = '\0';
         }
-        colunas[h].valorCampo[t] = '\0';
-
         h++;
         j++;
     }
-
     return colunas; //Retorna a 'page' do buffer
 }
 // EXCLUIR TUPLA BUFFER
@@ -104,7 +113,7 @@ column * excluirTuplaBuffer(tp_buffer *buffer, tp_table *campos, struct fs_objec
     if(buffer[page].nrec == 0) //Essa página não possui registros
         return ERRO_PARAMETRO;
 
-    int i, tamTpl = tamTupla(campos, objeto), j=0, t=0;
+    int i, tamTpl = tamTuplaSemByteControle(campos, objeto), j=0, t=0;
     i = tamTpl*nTupla; //Calcula onde começa o registro
 
     while(i < tamTpl*nTupla+tamTpl){
@@ -133,9 +142,9 @@ column * excluirTuplaBuffer(tp_buffer *buffer, tp_table *campos, struct fs_objec
 }
 // INSERE UMA TUPLA NO BUFFER!
 char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma tupla do disco a partir do valor de from
-    int tamTpl = tamTupla(campos, objeto) + 1; // +1 byte para flag de validade
+    // + qtdCampos para os bytes de coluna null e +1 para o byte de tupla valida
+    int tamTpl = tamTupla(campos, objeto) + objeto.qtdCampos + 1; 
     char *linha=(char *)malloc(sizeof(char)*tamTpl);
-    memset(linha, '\0', tamTpl);
 
     FILE *dados;
     from = from * tamTpl;
@@ -180,22 +189,23 @@ void setTupla(tp_buffer *buffer,char *tupla, int tam, int pos) { //Coloca uma tu
 }
 //// insere uma tupla no buffer
 int colocaTuplaBuffer(tp_buffer *buffer, int from, tp_table *campos, struct fs_objects objeto){//Define a página que será incluida uma nova tupla
-  int i, found;
-  char *tupla = getTupla(campos, objeto, from);
-  if(tupla == ERRO_DE_LEITURA)  return ERRO_LEITURA_DADOS;
-  else if (tupla == TUPLA_DELETADA) return ERRO_LEITURA_DADOS_DELETADOS;
+    int i, found;
+    char *tupla = getTupla(campos, objeto, from);
+    if(tupla == ERRO_DE_LEITURA)  return ERRO_LEITURA_DADOS;
+    else if (tupla == TUPLA_DELETADA) return ERRO_LEITURA_DADOS_DELETADOS;
 
-  for(i = found = 0; !found && i < PAGES; i++) {//Procura pagina com espaço para a tupla.
     int tam = tamTupla(campos, objeto);
-    if(SIZE - buffer[i].position > tam) {// Se na pagina i do buffer tiver espaço para a tupla, coloca tupla.
-      setTupla(buffer, tupla, tam, i);
-      found = 1;
-      buffer[i].position += tam; // Atualiza proxima posição vaga dentro da pagina.
-      buffer[i].nrec++;
+
+    for(i = found = 0; !found && i < PAGES; i++) {//Procura pagina com espaço para a tupla.
+        if(SIZE - buffer[i].position > tam) {// Se na pagina i do buffer tiver espaço para a tupla, coloca tupla.
+            setTupla(buffer, tupla, tam, i);
+            found = 1;
+            buffer[i].position += tam; // Atualiza proxima posição vaga dentro da pagina.
+            buffer[i].nrec++;
+        }
     }
-  }
-  free(tupla);
-  return found ? SUCCESS : ERRO_BUFFER_CHEIO;
+    free(tupla);
+    return found ? SUCCESS : ERRO_BUFFER_CHEIO;
 }
 ////////
 
