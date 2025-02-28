@@ -205,28 +205,31 @@ column *buscaColuna(Lista *t,char *str){
 }
 
 void *converter(char tipo,char* valor){
-  if(valor == COLUNA_NULL) return COLUNA_NULL;
-  if(tipo == 'S' || tipo == 'C'){
-    char *str = malloc(sizeof(char)*strlen(valor)+3);
-    str[0] = '\0'; //não retire.
-    strcat(str,"'");
-    strcat(str,valor);
-    strcat(str,"'");
-    return (void *)str;
-  }
-  double *num = malloc(sizeof(double));
-  if (!num) {
-    printf("Erro ao alocar memória\n");
-    exit(1);
-  }
+    if(valor == COLUNA_NULL) return COLUNA_NULL;
+    if(tipo == 'S' || tipo == 'C'){
+        char *str = malloc(sizeof(char)*strlen(valor)+3);
+        str[0] = '\0'; //não retire.
+        strcat(str,"'");
+        strcat(str,valor);
+        strcat(str,"'");
+        return (void *)str;
+    }
 
-  if(tipo == 'I'){ 
-    *num = atoi(valor);
-    return (void *)num;
-  }
+    void *num;
 
-  *num = strtod(valor, NULL);
-  return (void *)num;
+    if (tipo == 'I') {  // Se for inteiro
+        num = malloc(sizeof(int));
+        *(int *)num = *(int *)valor; 
+        return num;
+    }
+
+    num = malloc(sizeof(double));
+    if (!num) {
+        printf("Erro ao alocar memória\n");
+        exit(1);
+    }
+    *(double *)num = *(double *)valor;
+    return num;
   
 }
 

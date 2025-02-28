@@ -66,7 +66,7 @@ column * getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, 
 
     memset(colunas, 0, sizeof(column)*objeto.qtdCampos*(buffer[page].nrec));
 
-    int  j=0, t=0, h=0, i=objeto.qtdCampos;
+    int  indiceCampo=0, t=0, indiceColuna=0, i=objeto.qtdCampos;
 
     if (!buffer[page].position)
         return colunas;
@@ -75,31 +75,31 @@ column * getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, 
     memcpy(nullos, buffer[page].data, objeto.qtdCampos);
 
     while(i < buffer[page].position){
-        if(j >= objeto.qtdCampos) {
+        if(indiceCampo >= objeto.qtdCampos) {
             memcpy(nullos, buffer[page].data + i, objeto.qtdCampos);
             i += objeto.qtdCampos;
-            j=0;
+            indiceCampo=0;
         }
         
-        colunas[h].valorCampo = (char *)malloc(sizeof(char)*campos[j].tam+1);
-        colunas[h].tipoCampo = campos[j].tipo;  //Guarda tipo do campo
+        colunas[indiceColuna].valorCampo = (char *)malloc(sizeof(char)*campos[indiceCampo].tam+1);
+        colunas[indiceColuna].tipoCampo = campos[indiceCampo].tipo;  //Guarda tipo do campo
 
-        strcpy(colunas[h].nomeCampo, campos[j].nome); //Guarda nome do campo
+        strcpy(colunas[indiceColuna].nomeCampo, campos[indiceCampo].nome); //Guarda nome do campo
 
-        if(!nullos[h]) {
-            colunas[h].valorCampo = COLUNA_NULL;
-            i += campos[j].tam;
+        if(!nullos[indiceCampo]) {
+            colunas[indiceColuna].valorCampo = COLUNA_NULL;
+            i += campos[indiceCampo].tam;
         } else {
             t=0;
-            while(t < campos[j].tam){
-                colunas[h].valorCampo[t] = buffer[page].data[i]; //Copia os dados
+            while(t < campos[indiceCampo].tam){
+                colunas[indiceColuna].valorCampo[t] = buffer[page].data[i]; //Copia os dados
                 t++;
                 i++;
             }
-            colunas[h].valorCampo[t] = '\0';
+            colunas[indiceColuna].valorCampo[t] = '\0';
         }
-        h++;
-        j++;
+        indiceColuna++;
+        indiceCampo++;
     }
     return colunas; //Retorna a 'page' do buffer
 }
@@ -143,7 +143,7 @@ column * excluirTuplaBuffer(tp_buffer *buffer, tp_table *campos, struct fs_objec
 // INSERE UMA TUPLA NO BUFFER!
 char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma tupla do disco a partir do valor de from
     // + qtdCampos para os bytes de coluna null e +1 para o byte de tupla valida
-    int tamTpl = tamTupla(campos, objeto) + objeto.qtdCampos + 1; 
+    int tamTpl = tamTupla(campos, objeto) + 1; 
     char *linha=(char *)malloc(sizeof(char)*tamTpl);
 
     FILE *dados;

@@ -713,18 +713,19 @@ void printConsulta(Lista *proj, Lista *result){
         for(Nodo *j = li->prim; j; j = j->prox){
             inf_where *ij = (inf_where *)(j->inf);
 
-            if(ij->id == (int)'S')
+            if(ij->token == COLUNA_NULL) {
+                if(ij->id == 'S') printf(" %-20s ", "NULL");
+                else  printf(" %-10s ", "NULL");
+            }
+            else if(ij->id == 'S')
                 printf(" %-20s ", (char *)ij->token);
-
-            else if(ij->id == (int)'I'){
+            else if(ij->id == 'I'){
                 int *n = (int *)(ij->token);
                 printf(" %-10d ", *n);
             }
-
-            else if(ij->id == (int)'C')
+            else if(ij->id == 'C') 
                 printf(" %-10c ", *(char *)ij->token);
-                
-            else if(ij->id == (int)'D'){
+            else if(ij->id == 'D'){
                 double *n = (double *)(ij->token);
                 printf(" %-10f ", *n);
             }
@@ -747,7 +748,7 @@ void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColuna
         inf_where *nw = malloc(sizeof(inf_where));
         nw->id = c->tipoCampo;
 
-        if(c == COLUNA_NULL) nw->token = COLUNA_NULL;
+        if(c == (void *)COLUNA_NULL) nw->token = COLUNA_NULL;
         else if(c->tipoCampo == 'S'){
             char *str = malloc(sizeof(char)*strlen(c->valorCampo));
             str[0] = '\0';
