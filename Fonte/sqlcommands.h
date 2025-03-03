@@ -1,5 +1,4 @@
 #define FSQLCOMMANDS 1   // flag para garantir a não reinclusão
-
 #ifndef FMACROS // garante que macros.h não seja reincluída
    #include "macros.h"
 #endif
@@ -29,7 +28,7 @@ int typesCompatible(char , char);
     *nome - Nome da tabela que vai ser inserido os valores da estrutura *c.
     *c - Estrutura com o valores que vão ser inseridos na tabela *nome.
 */
-int finalizaInsert(char *, column *);
+int finalizaInsert(char *, column *, int tamTupla);
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Utilizada para impressão de tabelas.
     Parametros: Nome da tabela (char).
