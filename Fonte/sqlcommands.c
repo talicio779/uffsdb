@@ -739,7 +739,7 @@ void printConsulta(Lista *proj, Lista *result){
 void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColunasTab, int qtdColunasProj){
     adcNodo(resultado, resultado->ult, (void *)novaLista(NULL));
     Lista *tuplaRes = (Lista *)(resultado->ult->inf);
-    inf_where **listNw = (inf_where **)malloc(sizeof(inf_where) * qtdColunasTab);
+    inf_where **listNw = (inf_where **)malloc(sizeof(inf_where *) * qtdColunasTab);
     int i = 0;
 
     for(Nodo *n1 = tupla->prim; n1; n1 = n1->prox, i++){
@@ -757,28 +757,23 @@ void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColuna
         }
         else if(c->tipoCampo == 'I'){
             int *n = malloc(sizeof(int));
-            n = (int *)(c->valorCampo);
+            *n = *(int *)(c->valorCampo);
             nw->token = (void *)n;
         }
         else if(c->tipoCampo == 'C'){
             char *n = malloc(sizeof(char));
-            n = (char *)(c->valorCampo);
+            *n = *(char *)(c->valorCampo);
             nw->token = (void *)n;
         }
         else if(c->tipoCampo == 'D'){
             double *n = malloc(sizeof(double));
-            n = (double *)(c->valorCampo);
+            *n = *(double *)(c->valorCampo);
             nw->token = (void *)n;
         }
         listNw[i] = nw;
     }
     
-    for(int i = 0; i < qtdColunasProj; i++)
-        for(int j = 0; j < qtdColunasTab; j++)
-            if(indiceProj[i] == j) {
-                adcNodo(tuplaRes, tuplaRes->ult, (void *)listNw[j]);
-                break;
-            }
+    for(int i = 0; i < qtdColunasProj; i++) adcNodo(tuplaRes, tuplaRes->ult, listNw[indiceProj[i]]);
 
     free(listNw);
 }
