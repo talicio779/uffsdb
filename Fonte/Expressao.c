@@ -144,6 +144,8 @@ inf_where *opArit(Lista *l,Lista *t){
   Pilha *p = novaPilha();
   for(Nodo *i = l->prim; i; i = i->prox){
     inf_where *iw = (inf_where *)(i->inf);
+    if(iw->id == NULLA) return iw;
+    
     if(iw->id == VALUE_NUMBER) push(p,(void *)iw);
     else{
       inf_where *op1 = (inf_where *)pop(p);
@@ -215,22 +217,11 @@ void *converter(char tipo,char* valor){
         return (void *)str;
     }
 
-    void *num;
-
-    if (tipo == 'I') {  // Se for inteiro
-        num = malloc(sizeof(int));
-        *(int *)num = *(int *)valor; 
-        return num;
-    }
-
-    num = malloc(sizeof(double));
-    if (!num) {
-        printf("Erro ao alocar memória\n");
-        exit(1);
-    }
-    *(double *)num = *(double *)valor;
+    double *num = malloc(sizeof(double));
+    if(tipo == 'I') *num = (*((int *)valor))*1.0;
+    else *num = *(double *)valor;
+    
     return num;
-  
 }
 
 //daqui pra baixo relações

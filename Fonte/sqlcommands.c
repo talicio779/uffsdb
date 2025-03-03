@@ -748,7 +748,7 @@ void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColuna
         inf_where *nw = malloc(sizeof(inf_where));
         nw->id = c->tipoCampo;
 
-        if(c == (void *)COLUNA_NULL) nw->token = COLUNA_NULL;
+        if(c->valorCampo == (void *)COLUNA_NULL) nw->token = COLUNA_NULL;
         else if(c->tipoCampo == 'S'){
             char *str = malloc(sizeof(char)*strlen(c->valorCampo));
             str[0] = '\0';
@@ -861,7 +861,6 @@ Lista *op_select(inf_select *select) {
                 else abortar = 1;
             }
             else sat = 1;
-
             if(!abortar && sat) adcResultado(resultado, tupla, indiceProj, objeto.qtdCampos, qtdCamposProj);
 
             for(Nodo *n1 = tupla->prim, *n2; n1; n1 = n2){

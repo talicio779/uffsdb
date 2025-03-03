@@ -66,7 +66,7 @@ column * getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, 
 
     memset(colunas, 0, sizeof(column)*objeto.qtdCampos*(buffer[page].nrec));
 
-    int  indiceCampo=0, t=0, indiceColuna=0, i=objeto.qtdCampos;
+    int  indiceCampo=0, indiceColuna=0, i=objeto.qtdCampos;
 
     if (!buffer[page].position)
         return colunas;
@@ -81,23 +81,18 @@ column * getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, 
             indiceCampo=0;
         }
         
-        colunas[indiceColuna].valorCampo = (char *)malloc(sizeof(char)*campos[indiceCampo].tam+1);
+        colunas[indiceColuna].valorCampo = (char *)malloc(sizeof(char) * campos[indiceCampo].tam + 1);
         colunas[indiceColuna].tipoCampo = campos[indiceCampo].tipo;  //Guarda tipo do campo
 
         strcpy(colunas[indiceColuna].nomeCampo, campos[indiceCampo].nome); //Guarda nome do campo
 
         if(!nullos[indiceCampo]) {
-            colunas[indiceColuna].valorCampo = COLUNA_NULL;
-            i += campos[indiceCampo].tam;
+            colunas[indiceColuna].valorCampo = COLUNA_NULL;           
         } else {
-            t=0;
-            while(t < campos[indiceCampo].tam){
-                colunas[indiceColuna].valorCampo[t] = buffer[page].data[i]; //Copia os dados
-                t++;
-                i++;
-            }
-            colunas[indiceColuna].valorCampo[t] = '\0';
+            memcpy(colunas[indiceColuna].valorCampo, buffer[page].data + i, campos[indiceCampo].tam);
+            colunas[indiceColuna].valorCampo[campos[indiceCampo].tam] = '\0';
         }
+        i += campos[indiceCampo].tam;
         indiceColuna++;
         indiceCampo++;
     }
