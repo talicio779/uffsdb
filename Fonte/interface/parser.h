@@ -28,7 +28,7 @@ int yyparse();
 int yylex();
 int yylex_destroy();
 extern int  yylineno;
-
+extern FILE *yyin;
 /*
   Reseta as estruturas da estrutura SELECT.
 */
@@ -126,3 +126,5 @@ void clearGlobalStructs();
  * dos tokens iniciais.
  */
 void setMode(char mode);
+
+void getComando(char * input);

@@ -90,5 +90,6 @@ help							return HELP;
 [\\][t]+						return LIST_TABLE;
 [\\][t]+[^ ^\n]*		{invalidCommand(yytext);};
 [\\][t]+[ ]*[\n]		{invalidCommand("\\t <enter>'. Expecting '\\t TABLENAME"); return 0;};
+
 [ \t]+							/* ignore whitespace */;
 %%

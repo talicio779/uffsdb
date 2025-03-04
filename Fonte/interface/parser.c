@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #ifndef FMACROS
    #include "../macros.h"
 #endif
@@ -264,16 +267,22 @@ int interface() {
     Lista *resultado;
     connect("uffsdb"); // conecta automaticamente no banco padrão
     SELECT.tok = SELECT.proj = NULL;
+    using_history();
+
     while(1){
         if (!connected.conn_active) {
             printf(">");
         } else {
-            printf("%s=# ", connected.db_name);
+            printf("o");
         }
 
-        pthread_create(&pth, NULL, (void*)yyparse, &GLOBAL_PARSER);
-        pthread_join(pth, NULL);
-
+        char *input = readline("teste> "); 
+        if(!input) break;
+        
+        if(!(*input)) continue;
+        getComando(input);
+        free(input);
+        
         if (GLOBAL_PARSER.noerror) {
             if (GLOBAL_PARSER.mode != 0) {
                 if (!connected.conn_active) {
@@ -290,8 +299,8 @@ int interface() {
                         case OP_SELECT:
                             resultado = op_select(&SELECT);
                             if(resultado){
-                              printConsulta(SELECT.proj, resultado);
-                              resultado = NULL;
+                            printConsulta(SELECT.proj, resultado);
+                            resultado = NULL;
                             }
                             break;
                         case OP_CREATE_TABLE:
@@ -353,6 +362,7 @@ int interface() {
             pthread_create(&pth, NULL, (void*)clearGlobalStructs, NULL);
             pthread_join(pth, NULL);
         }
+    
     }
     return 0;
 }
@@ -368,4 +378,20 @@ void yyerror(char *s, ...) {
   vfprintf(stderr, s, ap);
   fprintf(stderr, "\n");
   */
+}
+
+void getComando(char * input){
+    add_history(input);
+    size_t len = strlen(input);
+    char *buffer = malloc(len + 2);  // +2 para '\n' e '\0'
+    
+    strcpy(buffer, input);
+    buffer[len] = '\n';  // Adiciona quebra de linha
+    buffer[len + 1] = '\0';  // Null-terminator
+
+    yyin = fmemopen(buffer, len + 1, "r");
+    yyparse();
+
+    free(buffer);
+    fclose(yyin);
 }
