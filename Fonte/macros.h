@@ -1,5 +1,6 @@
 #define FMACROS 0 // flag para identificar se macros.h já foi incluída
 // TRATAMENTO DE ERROS
+// ERROS inteiros
 #define SUCCESS 0
 #define ERRO_NO_TIPO_INTEIRO -1
 #define ERRO_NO_TAMANHO_STRING -2
@@ -21,6 +22,9 @@
 #define ERRO_REMOVER_ARQUIVO_OBJECT -18
 #define ERRO_REMOVER_ARQUIVO_SCHEMA -19
 #define ERRO_LEITURA_DADOS_DELETADOS -20
+#define ERRO_INDEX_NULL -21
+
+// ERROS ponteiro
 #define ERRO_DE_ALOCACAO NULL
 #define ERRO_ABRIR_ESQUEMA NULL
 #define ERRO_NOME_TABELA_INVALIDO NULL

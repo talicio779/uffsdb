@@ -326,6 +326,12 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
             case PK:
         		if(flag == 1) break;
                 //monta o nome do arquivo de indice
+                if(temp->valorCampo == COLUNA_NULL) {
+                    printf("ERROR: attempt to insert NULL value into collumn \"%s\".\n\n", temp->nomeCampo);
+                    erro = ERRO_INDEX_NULL;
+                    goto fim_free_mem;
+                }
+
                 arquivoIndice = (char *)malloc(sizeof(char) *
                   (strlen(connected.db_directory) + strlen(nome) + strlen(tab2[j].nome)));
                 strcpy(arquivoIndice, connected.db_directory); //diretorio
@@ -350,6 +356,11 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
             break;
 
             case FK:
+                if(temp->valorCampo == COLUNA_NULL) {
+                    printf("ERROR: attempt to insert NULL value into collumn \"%s\".\n\n", temp->nomeCampo);
+                    erro = ERRO_INDEX_NULL;
+                    goto fim_free_mem;
+                }
               //monta o nome do arquivo de indice da chave estrangeira
                 arquivoIndice = (char *)malloc(sizeof(char) *
                     (strlen(connected.db_directory) + strlen(tab2[j].tabelaApt) + strlen(tab2[j].attApt)));// caminho diretorio de arquivo de indice
@@ -365,24 +376,16 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                         tab2[j].tabelaApt, tab2[j].attApt);
                         if (erro != SUCCESS){
                             printf("ERROR: invalid reference to \"%s.%s\". The value \"%s\" does not exist.\n", tab2[j].tabelaApt,tab2[j].attApt,temp->valorCampo);
-
-            				free(auxT); // Libera a memoria da estrutura.
-            				free(temp); // Libera a memoria da estrutura.
-                            free(tab); // Libera a memoria da estrutura.
-  					        free(tab2); // Libera a memoria da estrutura.
-                            return ERRO_CHAVE_ESTRANGEIRA;
+                            erro = ERRO_CHAVE_ESTRANGEIRA;
+                            goto fim_free_mem;
                         }
                     }
                 } else { //atributo referenciado possui indice B+
                     encontrou = buscaChaveBtree(raizfk, temp->valorCampo);
                     if (!encontrou) {
                         printf("ERROR: invalid reference to \"%s.%s\". The value \"%s\" does not exist.\n", tab2[j].tabelaApt,tab2[j].attApt,temp->valorCampo);
-
-                        free(auxT); // Libera a memoria da estrutura.
-                        free(temp); // Libera a memoria da estrutura.
-                        free(tab); // Libera a memoria da estrutura.
-                        free(tab2); // Libera a memoria da estrutura.
-                        return ERRO_CHAVE_ESTRANGEIRA;
+                        erro = ERRO_CHAVE_ESTRANGEIRA;
+                        goto fim_free_mem;
                     }
                     erro = SUCCESS;
                 }
@@ -396,11 +399,8 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
 
     if((dados = fopen(directory,"a+b")) == NULL){
         printf("ERROR: cannot open file.\n");
-  		free(auxT); // Libera a memoria da estrutura.
-  		free(temp); // Libera a memoria da estrutura.
-        free(tab); // Libera a memoria da estrutura.
-  		free(tab2); // Libera a memoria da estrutura.
         return ERRO_ABRIR_ARQUIVO;
+        goto fim_free_mem;
 	}
     long int offset = ftell(dados);
 
@@ -424,6 +424,11 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
         }
 
 		if (auxT[t].chave == BT) {
+            if(auxC->valorCampo == COLUNA_NULL) {
+                printf("ERROR: attempt to insert NULL value into collumn \"%s\".\n\n", auxC->nomeCampo);
+                erro = ERRO_INDEX_NULL;
+                goto fim;
+            }
 			char * nomeAtrib2;
             //ntuplas = ntuplas-1;
             decnTuplas();
@@ -440,10 +445,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
         if(auxC->valorCampo == COLUNA_NULL) {
             fputc(0, dados);
             auxC->valorCampo = (char *)malloc(2);
-            if (!auxC->valorCampo) {
-                printf("Erro ao alocar memória\n");
-                exit(1);
-            }
+    
             auxC->valorCampo[0] = '0';
             auxC->valorCampo[1] = '\0';
         } else {
@@ -523,12 +525,11 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
     erro = SUCCESS;
     fwrite(buffer, tamTupla, 1, dados);
     
-    fim: 
+    fim: //label para liberar a memória utilizada e fechar o arquivo de dados
         fclose(dados);
-        free(tab); // Libera a memoria da estrutura.
-        free(tab2); // Libera a memoria da estrutura.
-        free(auxT); // Libera a memoria da estrutura.
-        free(temp); // Libera a memoria da estrutura.
+    fim_free_mem: //label para liberar a memória 
+        free(tab); // Libera a memória da estrutura.
+        free(tab2); // Libera a memória da estrutura.
         free(buffer);
         return erro;
 }
@@ -593,8 +594,7 @@ void insert(rc_insert *s_insert) {
 		}
 	}
 
-    if (!flag && finalizaInsert(s_insert->objName, colunas, tamTuplaSemByteControle(tabela->esquema, objeto)) == SUCCESS)
-    printf("INSERT 0 1\n");
+    if (!flag && finalizaInsert(s_insert->objName, colunas, tamTuplaSemByteControle(tabela->esquema, objeto)) == SUCCESS)  printf("INSERT 0 1\n");
 
 	//freeTp_table(&esquema, objeto.qtdCampos);
 	free(esquema);
