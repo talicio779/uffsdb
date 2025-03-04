@@ -261,22 +261,22 @@ void setMode(char mode) {
 
 int interface() {
     pthread_t pth;
-
     pthread_create(&pth, NULL, (void*)clearGlobalStructs, NULL);
     pthread_join(pth, NULL);
+
+    char prompt[LEN_DB_NAME + 4]; // 3 para "=# " +1 para \0
     Lista *resultado;
     connect("uffsdb"); // conecta automaticamente no banco padrão
     SELECT.tok = SELECT.proj = NULL;
     using_history();
-
     while(1){
         if (!connected.conn_active) {
-            printf(">");
+            snprintf(prompt, sizeof(prompt), "> ");
         } else {
-            printf("o");
+            snprintf(prompt, sizeof(prompt), "%s=# ", connected.db_name);
         }
-
-        char *input = readline("teste> "); 
+        fflush(stdout);
+        char *input = readline(prompt); 
         if(!input) break;
         
         if(!(*input)) continue;
