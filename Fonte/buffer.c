@@ -13,6 +13,8 @@
 #include "misc.h"
 #include "dictionary.h"
 
+static int isDeleted(char *linha);
+
 // INICIALIZACAO DO BUFFER
 tp_buffer * initbuffer(){
 
@@ -66,16 +68,22 @@ column * getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, 
 
     memset(colunas, 0, sizeof(column)*objeto.qtdCampos*(buffer[page].nrec));
 
-    int  indiceCampo=0, indiceColuna=0, i=objeto.qtdCampos;
+    int  indiceCampo=-1, indiceColuna=0, i=0;
 
     if (!buffer[page].position)
         return colunas;
 
     char* nullos =(char *)malloc(objeto.qtdCampos * sizeof(char));
-    memcpy(nullos, buffer[page].data, objeto.qtdCampos);
 
     while(i < buffer[page].position){
-        if(indiceCampo >= objeto.qtdCampos) {
+        if(indiceCampo == -1 || indiceCampo >= objeto.qtdCampos) {
+            if(isDeleted(buffer[page].data + i)) {
+                i+=tamTupla(campos, objeto);
+                indiceCampo = -1;
+                continue;
+            }
+            i++;
+
             memcpy(nullos, buffer[page].data + i, objeto.qtdCampos);
             i += objeto.qtdCampos;
             indiceCampo=0;
@@ -86,7 +94,7 @@ column * getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, 
 
         strcpy(colunas[indiceColuna].nomeCampo, campos[indiceCampo].nome); //Guarda nome do campo
 
-        if(!nullos[indiceCampo]) {
+        if(nullos[indiceCampo]) {
             colunas[indiceColuna].valorCampo = COLUNA_NULL;           
         } else {
             memcpy(colunas[indiceColuna].valorCampo, buffer[page].data + i, campos[indiceCampo].tam);
@@ -108,7 +116,7 @@ column * excluirTuplaBuffer(tp_buffer *buffer, tp_table *campos, struct fs_objec
     if(buffer[page].nrec == 0) //Essa página não possui registros
         return ERRO_PARAMETRO;
 
-    int i, tamTpl = tamTuplaSemByteControle(campos, objeto), j=0, t=0;
+    int i, tamTpl = tamTupla(campos, objeto), j=0, t=0;
     i = tamTpl*nTupla; //Calcula onde começa o registro
 
     while(i < tamTpl*nTupla+tamTpl){
@@ -138,7 +146,7 @@ column * excluirTuplaBuffer(tp_buffer *buffer, tp_table *campos, struct fs_objec
 // INSERE UMA TUPLA NO BUFFER!
 char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma tupla do disco a partir do valor de from
     // + qtdCampos para os bytes de coluna null e +1 para o byte de tupla valida
-    int tamTpl = tamTupla(campos, objeto) + 1; 
+    int tamTpl = tamTupla(campos, objeto); 
     char *linha=(char *)malloc(sizeof(char)*tamTpl);
 
     FILE *dados;
@@ -164,17 +172,11 @@ char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma 
     fseek(dados, -1, SEEK_CUR);
     fread(linha, sizeof(char), tamTpl, dados); //Traz a tupla inteira do arquivo
 
-    if(!linha[0]){
-        fclose(dados);
-        free(linha);
-        return TUPLA_DELETADA;
-    }
 
-    memmove(linha, linha + 1, sizeof(char) * (tamTpl - 1));
-    char *temp = realloc(linha,  sizeof(char) * (tamTpl - 1));
+  
 
     fclose(dados);
-    return temp;
+    return linha;
 }
 /////
 void setTupla(tp_buffer *buffer,char *tupla, int tam, int pos) { //Coloca uma tupla de tamanho "tam" no buffer e na página "pos"
@@ -187,7 +189,6 @@ int colocaTuplaBuffer(tp_buffer *buffer, int from, tp_table *campos, struct fs_o
     int i, found;
     char *tupla = getTupla(campos, objeto, from);
     if(tupla == ERRO_DE_LEITURA)  return ERRO_LEITURA_DADOS;
-    else if (tupla == TUPLA_DELETADA) return ERRO_LEITURA_DADOS_DELETADOS;
 
     int tam = tamTupla(campos, objeto);
 
@@ -196,7 +197,11 @@ int colocaTuplaBuffer(tp_buffer *buffer, int from, tp_table *campos, struct fs_o
             setTupla(buffer, tupla, tam, i);
             found = 1;
             buffer[i].position += tam; // Atualiza proxima posição vaga dentro da pagina.
-            buffer[i].nrec++;
+            if(isDeleted(tupla)) {
+                free(tupla);
+                return ERRO_LEITURA_DADOS_DELETADOS;
+            }
+             buffer[i].nrec++;
         }
     }
     free(tupla);
@@ -215,4 +220,8 @@ void cria_campo(int tam, int header, char *val, int x) {
     return;
   }
   for(i = 0; i < x; i++) printf(" ");
+}
+
+static int isDeleted(char *linha){
+    return linha[0]; //byte se foi deletado
 }

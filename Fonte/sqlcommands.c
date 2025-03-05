@@ -404,7 +404,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
 	}
     long int offset = ftell(dados);
 
-    fputc(1, dados); // flag para tupla não deletada
+    fputc(0, dados); // flag para tupla não deletada
 
     char* buffer = (char *)calloc(tamTupla, sizeof(char));
     int offsetBuffer = 0;
@@ -443,13 +443,13 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
         }
 
         if(auxC->valorCampo == COLUNA_NULL) {
-            fputc(0, dados);
+            fputc(1, dados);
             auxC->valorCampo = (char *)malloc(2);
     
             auxC->valorCampo[0] = '0';
             auxC->valorCampo[1] = '\0';
         } else {
-            fputc(1, dados);
+            fputc(0, dados);
         }
 
         if (auxT[t].tipo == 'S'){ // Grava um dado do tipo string.

@@ -449,7 +449,7 @@ int procuraObjectArquivo(char *nomeTabela){
 //
 int tamTupla(tp_table *esquema, struct fs_objects objeto) {// Retorna o tamanho total da tupla da tabela.
 
-    int qtdCampos = objeto.qtdCampos, i, tamanhoGeral = qtdCampos;
+    int qtdCampos = objeto.qtdCampos, i, tamanhoGeral = qtdCampos + 1; // tamanho do cabeçalho
 
     if(qtdCampos){ // Lê o primeiro inteiro que representa a quantidade de campos da tabela.
         for(i = 0; i < qtdCampos; i++)
