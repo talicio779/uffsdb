@@ -40,12 +40,15 @@
 (?i:DATABASE)					return DATABASE;
 (?i:DROP)						return DROP;
 (?i:CONTRIBUTORS)               return CONTR;
+[\\]his						return HISTORY;
+[\\]his+[^\n]*				{invalidCommand(yytext);};
+[\\]dhis						return DELETE_HISTORY;
+[\\]dhis+[^\n]*				{invalidCommand(yytext);};
 help							return HELP;
-[\\][h]							return HELP;
+[\\]h							return HELP;
 [\\][h]+[^\n]*					{invalidCommand(yytext);};
 [\\][\?]						return HELP;
 (?i:CLEAR)						return CLEAR;
-
 [,]								return *yytext;
 [;]								return *yytext;
 [-]								return *yytext;
@@ -64,18 +67,18 @@ help							return HELP;
 ([>][=]|[<][=]|[=]|[!][=]|[>]|[<]) {yylval.strval = yytext; return RELACIONAL;};
 
 \n								{
-									if (GLOBAL_PARSER.mode != 0) {
-										if (GLOBAL_PARSER.parentesis)
-											printf("%s(# ", connected.db_name);
-										else
-											printf("%s-# ", connected.db_name);
-									} else if (connected.conn_active) {
-								 		if (GLOBAL_PARSER.consoleFlag)
-							                GLOBAL_PARSER.consoleFlag = 0;
-							            else
-							                printf("%s=# ", connected.db_name);
-									} else
-								 		printf(">");
+									// if (GLOBAL_PARSER.mode != 0) {
+									// 	if (GLOBAL_PARSER.parentesis)
+									// 		printf("%s(# ", connected.db_name);
+									// 	else
+									// 		printf("%s-# ", connected.db_name);
+									// } else if (connected.conn_active) {
+								 	// 	if (GLOBAL_PARSER.consoleFlag)
+							        //         GLOBAL_PARSER.consoleFlag = 0;
+							        //     else
+							        //         printf("%s=# ", connected.db_name);
+									// } else
+								 	// 	printf(">");
 								};
 
 [\\][c]							return CONNECT;

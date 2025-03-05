@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <readline/history.h>
+
 ////
 #ifndef FMACROS // garante que macros.h não seja reincluída
    #include "macros.h"
@@ -96,6 +98,20 @@ int drawline(tp_buffer *buffpoll, tp_table *s, struct fs_objects objeto, int p, 
     }
     printf("\n");
     return SUCCESS;
+}
+////
+void printHistory(){
+    HIST_ENTRY **comands_list = history_list();
+    if (!comands_list) return;
+        
+    for (int i = 0; comands_list[i]; i++) {
+        printf("%d    %s\n", i, comands_list[i]->line);
+    }
+}
+
+void deleteHistory(){
+    clear_history();
+    remove("data/hisroty.txt");
 }
 ////
 void contr() {
