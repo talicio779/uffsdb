@@ -41,14 +41,7 @@ Lista *op_select(inf_query *);
     Parametros: Nome da tabela (char).
     Retorno:    Número de tuplas deletadas.
    ---------------------------------------------------------------------------------------------*/
-int op_delete(inf_query *);
-/* ----------------------------------------------------------------------------------------------
-    Objetivo:   Utilizada para gravar as mudanças do buffer no disco.
-    Parametros: Buffer e tupla modificada.
-    Retorno:    SUCESS.
-   ---------------------------------------------------------------------------------------------*/
-void writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects objeto);
-
+void op_delete(inf_query *);
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Função para exclusão de tabelas.
     Parametros: Nome da tabela (char).

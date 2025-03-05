@@ -211,3 +211,32 @@ void cria_campo(int tam, int header, char *val, int x) {
   }
   for(i = 0; i < x; i++) printf(" ");
 }
+
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para gravar as mudanças do buffer no disco.
+    Parametros: Buffer e tupla modificada.
+    Retorno:    void.
+   ---------------------------------------------------------------------------------------------*/
+int writeBufferToDisk(tp_buffer *bufferpoll) {
+    struct fs_objects dicio; 
+
+    char directory[LEN_DB_NAME_IO];
+    strcpy(directory, connected.db_directory);
+    strcat(directory, dicio.nArquivo);
+
+    FILE *dados = fopen(directory, "r+b");
+    if (!dados) {
+        printf("ERROR: Unable to open file for writing.\n");
+        return 0;
+    }
+
+    fseek(dados, bufferpoll->position, SEEK_SET);
+
+    fwrite(bufferpoll->data, SIZE, 1, dados);
+
+    fflush(dados);
+
+    fclose(dados);
+
+    return SUCCESS;
+}

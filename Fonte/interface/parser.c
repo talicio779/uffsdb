@@ -269,7 +269,6 @@ int interface() {
     pthread_create(&pth, NULL, (void*)clearGlobalStructs, NULL);
     pthread_join(pth, NULL);
     Lista *resultado;
-    int aaa;
     connect("uffsdb"); // conecta automaticamente no banco padrão
     QUERY.tok = QUERY.proj = NULL;
     while(1){
@@ -303,11 +302,7 @@ int interface() {
                             }
                             break;
                         case OP_DELETE:
-                            aaa = op_delete(&QUERY);
-                            if(aaa) {
-                                printf("DELETED %d %s\n", aaa, (aaa > 1) ? "rows" : "row");
-                                aaa = 0;
-                            }
+                            op_delete(&QUERY);
                             break;
                         case OP_CREATE_TABLE:
                             createTable(&GLOBAL_DATA);

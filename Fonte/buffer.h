@@ -61,3 +61,10 @@ char *getTupla(tp_table *campos,struct fs_objects objeto, int from);
 void setTupla(tp_buffer *buffer,char *tupla, int tam, int pos);
 ////
 void cria_campo(int , int , char *, int );
+
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para gravar as mudanças do buffer no disco.
+    Parametros: Buffer e tupla modificada.
+    Retorno:    void.
+   ---------------------------------------------------------------------------------------------*/
+int writeBufferToDisk(tp_buffer *bufferpoll);
