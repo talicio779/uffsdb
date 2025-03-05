@@ -133,30 +133,31 @@ void help() {
 	printf("\t\t\t\t\t\t  corresponder à quantidade de colunas da tabela.\n");
 	printf("\nSELECT * FROM NOME;\t\t\t\t- Não é a implementação padrão do SELECT mas serve para\n");
 	printf("\t\t\t\t\t\t  imprmir todos os valores de uma tabela\n");
+    printf("\nDELETE FROM NOME;\t\t\t\t- Serve para deletar todas as tuplas da tabela desejada\n");
   printf("\nCREATE INDEX ON tabela (atributo);\t\t- Cria um índice B+ para o atributo especificado.\n");
 }
 ////
 int objcmp(char *obj, char *str) {
 	int i;
-  char a,b;
-  for(i = 0; obj[i] && str[i]; i++){
-    a = tolower(obj[i]), b = tolower(str[i]);
-    if(a != b) return a-b;
-  }
-	return tolower(obj[i])-tolower(str[i]);
+    char a, b;
+    for(i = 0; obj[i] && str[i]; i++) {
+        a = tolower(obj[i]), b = tolower(str[i]);
+        if(a != b) return a - b;
+    }
+	return tolower(obj[i]) - tolower(str[i]);
 }
 
 void strcpylower(char *dest, char *src) {
 	int i;
-  for(i = 0; src[i]; i++) dest[i] = tolower(src[i]);
-  dest[i] = '\0';
+    for(i = 0; src[i]; i++) dest[i] = tolower(src[i]);
+    dest[i] = '\0';
 }
 
 void strncpylower(char *dest, char *src, int length) {
 	int i;
 	for(i = 0; i < length && src[i]; i++)
     dest[i] = tolower(src[i]);
-  dest[i] = '\0';
+    dest[i] = '\0';
 }
 ///
 /* ----------------------------------------------------------------------------------------------

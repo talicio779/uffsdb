@@ -31,8 +31,8 @@ ___
 Utilizada para trabalhar com database. 
 ### Atributos
 * `valid`: char para saber se é valido 1 ou 0.
-* `db_name`: string com tamanho definido em [[Macros#Tamanhos]] que armazena o diretório.
-* **`db_directory`**: String com tamanho definido em [[Macros#Tamanhos]] que armazena o diretório.
+* `db_name`: string com tamanho definido em [[Macros#Tamanhos]] que armazena o diretório (armazena o nome identificador do db).
+* **`db_directory`**: String com tamanho definido em [[Macros#Tamanhos]] que armazena o diretório (armazena o caminho do diretório do db - depois uma '/' sempre é adicionada ao final na criação de um db).
 
 ```C
 typedef struct data_base{
@@ -88,9 +88,9 @@ Para ajudar o select
 
 ```c
 typedef struct inf_select{
-char *tabela;
-int tamTokens;
-Lista *tok,*proj;
+	char *tabela;
+	int tamTokens;
+	Lista *tok,*proj;
 }inf_select;
 ```
 

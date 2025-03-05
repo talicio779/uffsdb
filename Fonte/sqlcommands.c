@@ -775,7 +775,7 @@ void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColuna
     free(listNw);
 }
 
-Lista *op_select(inf_select *select) {
+Lista *op_select(inf_query *select) {
   //inicio das validações.
     tp_table *esquema;
     tp_buffer *bufferpoll;
@@ -798,7 +798,7 @@ Lista *op_select(inf_select *select) {
         printf("ERROR: no memory available to allocate buffer.\n");
         return NULL;
     }
-    int erro = SUCCESS,x;
+    int erro = SUCCESS, x;
     for(x = 0; erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS; x++)
         erro = colocaTuplaBuffer(bufferpoll, x, esquema, objeto);
     x--;
@@ -871,6 +871,128 @@ Lista *op_select(inf_select *select) {
     free(bufferpoll); bufferpoll = NULL;
     return resultado;
 }
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para deletar tuplas.
+    Parametros: Nome da tabela (char).
+    Retorno:    Número de tuplas deletadas.
+   ---------------------------------------------------------------------------------------------*/
+int op_delete(inf_query *delete) {
+    tp_table *esquema;
+    tp_buffer *bufferpoll;
+    struct fs_objects objeto;
+    if(!verificaNomeTabela(delete->tabela)){
+        printf("\nERROR: relation \"%s\" was not found.\n\n\n", delete->tabela);
+        return 0;
+    }
+    objeto = leObjeto(delete->tabela);
+    esquema = leSchema(objeto);
+    if(esquema == ERRO_ABRIR_ESQUEMA){
+        printf("ERROR: schema cannot be created.\n");
+        free(esquema);
+        return 0;
+    }
+    bufferpoll = initbuffer();
+    if(bufferpoll == ERRO_DE_ALOCACAO){
+        free(bufferpoll);
+        free(esquema);
+        printf("ERROR: no memory available to allocate buffer.\n");
+        return 0;
+    }
+    int erro = SUCCESS;
+    int x, deletedTuples = 0;
+    for(x = 0; erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS; x++)
+        erro = colocaTuplaBuffer(bufferpoll, x, esquema, objeto);
+    x--;
+
+    column *pagina = getPage(bufferpoll, esquema, objeto, 0);
+    if(!pagina){
+        printf("Tabela vazia.\n");
+        free(bufferpoll);
+        free(esquema);
+        return 0;
+    }
+
+    if(!validaColsWhere(delete->tok, pagina, objeto.qtdCampos)){
+        free(bufferpoll);
+        free(esquema);
+        return 0;
+    }
+
+    char abortar = 0;
+    int deleteAll = (delete->tok == NULL);
+
+    for (int p = 0; !abortar && x; x -= bufferpoll[p++].nrec) {
+        pagina = getPage(bufferpoll, esquema, objeto, p);
+        if(pagina == ERRO_PARAMETRO){
+            printf("ERROR: could not open the table.\n");
+            free(bufferpoll);
+            free(esquema);
+            return 0;
+        }
+
+        for (int k = 0; !abortar && k < bufferpoll[p].nrec; k++) {
+            int shouldDelete = deleteAll;
+
+            if (!deleteAll) {
+                Lista *tupla = novaLista(NULL);
+                for (int i = 0; i < objeto.qtdCampos; i++) {
+                    adcNodo(tupla, tupla->ult, (void *)(&pagina[k * objeto.qtdCampos + i]));
+                }
+
+                Lista *l = resArit(delete->tok, tupla);
+                if (l) {
+                    Lista *l2 = relacoes(l);
+                    shouldDelete = (logPosfixa(l2) != 0);
+                }
+                free(tupla);
+            }
+
+            if (shouldDelete) {
+                pagina[k * objeto.qtdCampos].valorCampo = TUPLA_DELETADA;
+                deletedTuples++;
+            }
+        }
+    }
+
+    if(deletedTuples > 0) {
+        writeBufferToDisk(bufferpoll, objeto);
+    }
+
+    free(bufferpoll);
+    free(esquema);
+    return deletedTuples;
+}
+
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para gravar as mudanças do buffer no disco.
+    Parametros: Buffer e tupla modificada.
+    Retorno:    SUCESS.
+   ---------------------------------------------------------------------------------------------*/
+void writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects objeto) {
+    char directory[LEN_DB_NAME_IO];
+    strcpy(directory, connected.db_directory);
+    strcat(directory, objeto.nArquivo);
+
+    if (bufferpoll->db == 0) return;
+
+    FILE *dados = fopen(directory, "r+b");
+    if (!dados) {
+        printf("ERROR: Unable to open file for writing.\n");
+        return;
+    }
+
+    fseek(dados, bufferpoll->position, SEEK_SET);
+
+    fwrite(bufferpoll->data, SIZE, 1, dados);
+
+    fflush(dados);
+
+    bufferpoll->db = 0;
+
+    fclose(dados);
+}
+
+
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Copia todas as informações menos a tabela do objeto, que será removida.
     Parametros: Objeto que será removido do schema.

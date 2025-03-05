@@ -5,13 +5,14 @@
  * Essas funcções irão preencher uma estrutura, ou parte dela, e chamarão
  * as funções do banco de dados para executar as operações.
  */
-#define OP_INSERT 			1
-#define OP_CREATE_TABLE 	2
-#define OP_DROP_TABLE 		3
+#define OP_INSERT 			    1
+#define OP_CREATE_TABLE 	  2
+#define OP_DROP_TABLE 		  3
 #define OP_CREATE_DATABASE 	4
-#define OP_DROP_DATABASE 	5
-#define OP_SELECT 		6
-#define OP_CREATE_INDEX 7
+#define OP_DROP_DATABASE 	  5
+#define OP_SELECT 		      6
+#define OP_CREATE_INDEX     7
+#define OP_DELETE           8
 
 /* Estrutura global que guarda as informações obtidas pelo yacc
  * na identificação dos tokens
@@ -32,11 +33,11 @@ extern int  yylineno;
 /*
   Reseta as estruturas da estrutura SELECT.
 */
-void resetSelect();
+void resetQuery();
 /*
-  Adciona o nome da tabela onde será realizado o select.
+  Adciona o nome da tabela onde será realizado o select/delete.
 */
-void adcTabelaSelect(char *nome);
+void adcTabelaQuery(char *nome, char type);
 
 /*
   Adciona os tokens da operação select.
@@ -126,3 +127,8 @@ void clearGlobalStructs();
  * dos tokens iniciais.
  */
 void setMode(char mode);
+
+/* Recupera a operação atual que será realizada através
+ * dos tokens iniciais.
+ */
+char getMode();

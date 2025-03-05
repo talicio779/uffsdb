@@ -58,11 +58,13 @@ typedef struct inf_where{
   void *token;
 }inf_where;
 
-typedef struct inf_select{
-  char *tabela;
-  int tamTokens;
-  Lista *tok,*proj;
-}inf_select;
+typedef struct  inf_query {
+  char *tabela;     // Nome da tabela
+  int tamTokens;    // Número de tokens na cláusula WHERE
+  Lista *tok;       // Lista de condições WHERE
+  Lista *proj;      // Colunas recuperadas (NULL para DELETE)
+  char queryType;   // 'S' for SELECT, 'D' for DELETE
+} inf_query;
 
 typedef struct rc_parser {
     int         mode;           // Modo de operação (definido em /interface/parser.h)

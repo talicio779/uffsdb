@@ -2,8 +2,8 @@
 
 typedef struct Nodo{
   void *inf;
-  struct Nodo *ant,*prox;
-}Nodo;
+  struct Nodo *ant, *prox;
+} Nodo;
 
 /*
   Retorna o ponteiro para um nodo com void *
@@ -12,9 +12,9 @@ Nodo *novoNodo(void *);
 
 typedef struct Lista{
   int tam;
-  Nodo *prim,*ult;
+  Nodo *prim, *ult;
   int (*cmp)(void *inf1,void *inf2);
-}Lista;
+} Lista;
 
 /*
     Cria uma nova lista com a função de comparação cmp,

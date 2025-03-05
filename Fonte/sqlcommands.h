@@ -35,7 +35,20 @@ int finalizaInsert(char *, column *);
     Parametros: Nome da tabela (char).
     Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
-Lista *op_select(inf_select *);
+Lista *op_select(inf_query *);
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para deletar tuplas.
+    Parametros: Nome da tabela (char).
+    Retorno:    Número de tuplas deletadas.
+   ---------------------------------------------------------------------------------------------*/
+int op_delete(inf_query *);
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para gravar as mudanças do buffer no disco.
+    Parametros: Buffer e tupla modificada.
+    Retorno:    SUCESS.
+   ---------------------------------------------------------------------------------------------*/
+void writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects objeto);
+
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Função para exclusão de tabelas.
     Parametros: Nome da tabela (char).

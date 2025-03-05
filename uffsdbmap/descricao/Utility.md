@@ -16,8 +16,8 @@ A **Lista** é uma estrutura duplamente encadeada que contém:
 ```C
 typedef struct Lista {
 	int tam; 
-	Nodo *prim,
-	*ult; int (*cmp)(void *inf1, void *inf2);
+	Nodo *prim, *ult; 
+	int (*cmp)(void *inf1, void *inf2);
 } Lista;
 ```
 ---
