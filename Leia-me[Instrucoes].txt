@@ -384,3 +384,18 @@ Como é armazenado o índice B+:
 		valor(string alocada dinamicamente) + $ + endereço(int, offset da tupla no arquivo de dados) + #(delimitador de tupla) + ... + &(fim do indice denso) + número de tuplas na tabela
 
 	A construção da árvore b+ é feita através do método Bulking Load, ou seja, carregamento em massa.
+
+##############LEIA-ME PARTE 6 #############################################################################################################
+
+=> 16 de fevereiro de 2025 <=
+
+Universidade Federal da Fronteira Sul – UFFS
+Curso: Ciência da Computação
+Componente Curricular: Banco de Dados II
+Professor: Dr. Denio Duarte
+Alunos: João Gomes e Valéria Faccin
+=============================================================================================================================================
+
+Foi implementado uma navegação entre histórico de comandos.
+	seta direcional para cima volta um comando e para baixo desce,
+	dá para navegar na mesma linha com as setas laterais

@@ -28,7 +28,7 @@ int yyparse();
 int yylex();
 int yylex_destroy();
 extern int  yylineno;
-
+extern FILE *yyin;
 /*
   Reseta as estruturas da estrutura SELECT.
 */
@@ -126,3 +126,19 @@ void clearGlobalStructs();
  * dos tokens iniciais.
  */
 void setMode(char mode);
+
+/*
+* Realiza operações antes de finalizar o programa 
+* op1: grava o histórico
+*/
+void quit(int flag);
+
+/*
+* Obtem o comando para o parser
+*/
+void getComando(char * input);
+
+/*
+* inicializa o histórico de comandos 
+*/
+void historyInit();
