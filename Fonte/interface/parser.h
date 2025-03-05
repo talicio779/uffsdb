@@ -127,4 +127,18 @@ void clearGlobalStructs();
  */
 void setMode(char mode);
 
+/*
+* Realiza operações antes de finalizar o programa 
+* op1: grava o histórico
+*/
+void quit(int flag);
+
+/*
+* Obtem o comando para o parser
+*/
 void getComando(char * input);
+
+/*
+* inicializa o histórico de comandos 
+*/
+void historyInit();

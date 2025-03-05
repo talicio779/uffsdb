@@ -58,6 +58,11 @@ void invalidCommand(char *command) {
     printf("ERROR: Invalid command '%s'. Type \"help\" for help.\n", command);
 }
 
+void quit(int flag){
+    write_history("data/history.txt");
+    exit(flag);
+};
+
 void notConnected() {
     printf("ERROR: you are not connected to any database.\n");
 }
@@ -268,10 +273,10 @@ int interface() {
     Lista *resultado;
     connect("uffsdb"); // conecta automaticamente no banco padrão
     SELECT.tok = SELECT.proj = NULL;
-    using_history();
+    historyInit();
     while(1){
         if (!connected.conn_active) {
-            snprintf(prompt, sizeof(prompt), "> ");
+            snprintf(prompt, 3, "> ");
         } else {
             snprintf(prompt, sizeof(prompt), "%s=# ", connected.db_name);
         }
@@ -394,4 +399,14 @@ void getComando(char * input){
 
     free(buffer);
     fclose(yyin);
+}
+
+void historyInit(){
+    using_history();
+    
+    FILE *f = fopen("data/history.txt", "r");
+    if (!f) return ;
+
+    fclose(f);
+    read_history("data/history.txt"); 
 }

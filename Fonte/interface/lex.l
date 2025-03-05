@@ -40,12 +40,10 @@
 (?i:DATABASE)					return DATABASE;
 (?i:DROP)						return DROP;
 (?i:CONTRIBUTORS)               return CONTR;
+help							return HELP;
 [\\]his						return HISTORY;
 [\\]his+[^\n]*				{invalidCommand(yytext);};
-[\\]dhis						return DELETE_HISTORY;
-[\\]dhis+[^\n]*				{invalidCommand(yytext);};
-help							return HELP;
-[\\]h							return HELP;
+[\\][h]							return HELP;
 [\\][h]+[^\n]*					{invalidCommand(yytext);};
 [\\][\?]						return HELP;
 (?i:CLEAR)						return CLEAR;
@@ -80,7 +78,8 @@ help							return HELP;
 									// } else
 								 	// 	printf(">");
 								};
-
+[\\]dhis						return DELETE_HISTORY;
+[\\]dhis+[^\n]*				{invalidCommand(yytext);};
 [\\][c]							return CONNECT;
 [\\][c]+[^ ^\n]*		{invalidCommand(yytext);};
 [\\][c]+[ ]*[\n]		{invalidCommand("\\c <enter>'. Expecting '\\c DBNAME"); return 0;};

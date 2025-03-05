@@ -66,7 +66,7 @@ connection: CONNECT OBJECT {connect(*yytext); GLOBAL_PARSER.consoleFlag = 1; ret
 qualquer_coisa: OBJECT {GLOBAL_PARSER.consoleFlag = 1; GLOBAL_PARSER.noerror = 0; return 0;};
 
 /* EXIT */
-exit_program: QUIT {exit(0);};
+exit_program: QUIT {quit(0);};
 
 clear: CLEAR {clear(); GLOBAL_PARSER.consoleFlag = 1; return 0;};
 
@@ -107,7 +107,7 @@ help_pls: HELP {help(); GLOBAL_PARSER.consoleFlag = 1; return 0;}
 /* HELP */
 history_pls: HISTORY {printHistory(); GLOBAL_PARSER.consoleFlag = 1; return 0;};
 
-delete_history_pls: HISTORY {deleteHistory(); GLOBAL_PARSER.consoleFlag = 1; return 0;};
+delete_history_pls: DELETE_HISTORY {deleteHistory(); GLOBAL_PARSER.consoleFlag = 1; return 0;};
 
 /* CONTRIBUTORS */
 contributors: CONTR {contr(); GLOBAL_PARSER.consoleFlag = 1; return 0;}
