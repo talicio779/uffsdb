@@ -127,13 +127,13 @@ int verifyFK(char *tableName, char *column){
    ---------------------------------------------------------------------------------------------*/
 
 int verificaChaveFK(char *nomeTabela,column *c, char *nomeCampo, char *valorCampo, char *tabelaApt, char *attApt){
-    int x,j, erro, page;
+    int x, erro, page;
     char str[20];
     char dat[5] = ".dat";
     struct fs_objects objeto;
     tp_table *tabela;
     tp_buffer *bufferpoll;
-    column *pagina = NULL;
+    tupla *pagina = NULL;
 
     strcpylower(str, tabelaApt);
     strcat(str, dat);              //Concatena e junta o nome com .dat
@@ -154,54 +154,59 @@ int verificaChaveFK(char *nomeTabela,column *c, char *nomeCampo, char *valorCamp
         if (pagina) free(pagina);
         pagina = getPage(bufferpoll, tabela, objeto, page);
         if (!pagina) break;
+        /*
+        * Pq ele percorre todas as tuplas para verificar ??????
+        * o campo vai mudar de nome no select ??? ?
+        */
+        for(int j = 0; j < bufferpoll[page].nrec; j++){
+            for (int i = 0; i < objeto.qtdCampos; i++)
+                if (pagina[j].column[i].nomeCampo) {
+                    column *c = &pagina[j].column[i];
+                    if(objcmp(c->nomeCampo, attApt) == 0){
 
-        for(j = 0; j < objeto.qtdCampos * bufferpoll[page].nrec; j++){
-            if (pagina[j].nomeCampo) {
-                if(objcmp(pagina[j].nomeCampo, attApt) == 0){
+                        if(c->tipoCampo == 'S'){
+                            if(objcmp(c->valorCampo, valorCampo) == 0){
+                                free(pagina);
+                                free(bufferpoll);
+                                free(tabela);
+                                return SUCCESS;
+                            }
+                        }
+                        else if(c->tipoCampo == 'I'){
+                            int *n = (int *)&c->valorCampo[0];
+                            if(*n == atoi(valorCampo)){
+                                free(pagina);
+                                free(bufferpoll);
+                                free(tabela);
+                                return SUCCESS;
+                            }
+                        }
+                        else if(c->tipoCampo == 'D'){
+                            double *nn = (double *)&c->valorCampo[0];
 
-                    if(pagina[j].tipoCampo == 'S'){
-                        if(objcmp(pagina[j].valorCampo, valorCampo) == 0){
+                            if(*nn == atof(valorCampo)){
+                                free(pagina);
+                                free(bufferpoll);
+                                free(tabela);
+                                return SUCCESS;
+                            }
+                        }
+                        else if(c->tipoCampo == 'C'){
+                            if(c->valorCampo == valorCampo){
+                                free(pagina);
+                                free(bufferpoll);
+                                free(tabela);
+                                return SUCCESS;
+                            }
+                        }
+                        else {
                             free(pagina);
                             free(bufferpoll);
                             free(tabela);
-                            return SUCCESS;
+                            return ERRO_CHAVE_ESTRANGEIRA;
                         }
-                    }
-                    else if(pagina[j].tipoCampo == 'I'){
-                        int *n = (int *)&pagina[j].valorCampo[0];
-                        if(*n == atoi(valorCampo)){
-                            free(pagina);
-                            free(bufferpoll);
-                            free(tabela);
-                            return SUCCESS;
-                        }
-                    }
-                    else if(pagina[j].tipoCampo == 'D'){
-                        double *nn = (double *)&pagina[j].valorCampo[0];
-
-                        if(*nn == atof(valorCampo)){
-                            free(pagina);
-                            free(bufferpoll);
-                            free(tabela);
-                            return SUCCESS;
-                        }
-                    }
-                    else if(pagina[j].tipoCampo == 'C'){
-                        if(pagina[j].valorCampo == valorCampo){
-                            free(pagina);
-                            free(bufferpoll);
-                            free(tabela);
-                            return SUCCESS;
-                        }
-                    }
-                    else {
-                        free(pagina);
-                        free(bufferpoll);
-                        free(tabela);
-                        return ERRO_CHAVE_ESTRANGEIRA;
                     }
                 }
-            }
         }
     }
     if (pagina) free(pagina);
@@ -219,7 +224,7 @@ int verificaChaveFK(char *nomeTabela,column *c, char *nomeCampo, char *valorCamp
    ---------------------------------------------------------------------------------------------*/
 int verificaChavePK(char *nomeTabela, column *c, char *nomeCampo, char *valorCampo) {
     int j, x, erro, page;
-    column *pagina = NULL;
+    tupla *pagina = NULL;
 
     struct fs_objects objeto;
     tp_table *tabela;
@@ -247,40 +252,43 @@ int verificaChavePK(char *nomeTabela, column *c, char *nomeCampo, char *valorCam
         pagina = getPage(bufferpoll, tabela, objeto, page);
         if (!pagina) break;
 
-        for(j = 0; j < objeto.qtdCampos * bufferpoll[page].nrec; j++){
-            if (pagina[j].nomeCampo) {
-                if (objcmp(pagina[j].nomeCampo, nomeCampo) == 0) {
-                    if (pagina[j].tipoCampo == 'S') {
-                        if (objcmp(pagina[j].valorCampo, valorCampo) == 0){
-                            free(pagina);
-                            free(bufferpoll);
-                            free(tabela);
-                            return ERRO_CHAVE_PRIMARIA;
-                        }
-                    } else if (pagina[j].tipoCampo == 'I') {
-                        int *n = (int *)&pagina[j].valorCampo[0];
+        for(j = 0; j < bufferpoll[page].nrec; j++){
+            for(int i = 0; i < objeto.qtdCampos; i++){
+                if (pagina[j].column[i].nomeCampo) {
+                    column *c = &pagina[j].column[i];
+                    if (objcmp(c->nomeCampo, nomeCampo) == 0) {
+                        if (c->tipoCampo == 'S') {
+                            if (objcmp(c->valorCampo, valorCampo) == 0){
+                                free(pagina);
+                                free(bufferpoll);
+                                free(tabela);
+                                return ERRO_CHAVE_PRIMARIA;
+                            }
+                        } else if (c->tipoCampo == 'I') {
+                            int *n = (int *)&c->valorCampo[0];
 
-                        if (*n == atoi(valorCampo)) {
-                            free(pagina);
-                            free(bufferpoll);
-                            free(tabela);
-                            return ERRO_CHAVE_PRIMARIA;
-                        }
-                    } else if (pagina[j].tipoCampo == 'D'){
-                        double *nn = (double *)&pagina[j].valorCampo[0];
+                            if (*n == atoi(valorCampo)) {
+                                free(pagina);
+                                free(bufferpoll);
+                                free(tabela);
+                                return ERRO_CHAVE_PRIMARIA;
+                            }
+                        } else if (c->tipoCampo == 'D'){
+                            double *nn = (double *)&c->valorCampo[0];
 
-                        if (*nn == atof(valorCampo)){
-                            free(pagina);
-                            free(bufferpoll);
-                            free(tabela);
-                            return ERRO_CHAVE_PRIMARIA;
-                        }
-                    } else if (pagina[j].tipoCampo == 'C'){
-                        if (pagina[j].valorCampo == valorCampo){
-                            free(pagina);
-                            free(bufferpoll);
-                            free(tabela);
-                            return ERRO_CHAVE_PRIMARIA;
+                            if (*nn == atof(valorCampo)){
+                                free(pagina);
+                                free(bufferpoll);
+                                free(tabela);
+                                return ERRO_CHAVE_PRIMARIA;
+                            }
+                        } else if (c->tipoCampo == 'C'){
+                            if (c->valorCampo == valorCampo){
+                                free(pagina);
+                                free(bufferpoll);
+                                free(tabela);
+                                return ERRO_CHAVE_PRIMARIA;
+                            }
                         }
                     }
                 }
@@ -603,14 +611,14 @@ void insert(rc_insert *s_insert) {
 }
 
 //select * from t4;
-int validaProj(Lista *proj, column *colunas, int qtdColunas, int *indiceProj){
+int validaProj(Lista *proj, tp_table *colunas, int qtdColunas, int *indiceProj){
     if(proj->tam == 1 && ((char *)proj->prim->inf)[0] == '*'){
         free(rmvNodoPtr(proj, proj->prim));
         proj->prim = proj->ult = NULL;
         for(int j = 0; j < qtdColunas; j++){
-            indiceProj[j] = j;
-            char *str = malloc(sizeof(char) * strlen(colunas[j].nomeCampo));
-            strcpy(str, colunas[j].nomeCampo);
+            indiceProj[j] = (char) j;
+            char *str = malloc(sizeof(char) * strlen(colunas[j].nome));
+            strcpy(str, colunas[j].nome);
             adcNodo(proj, proj->ult, str);
         }
         return 1;
@@ -622,9 +630,9 @@ int validaProj(Lista *proj, column *colunas, int qtdColunas, int *indiceProj){
     int i = 0;
     for(Nodo *it = proj->prim; it; it = it->prox, i++){    
         for(int j = 0; j < qtdColunas; j++){
-            if (strcmp((char *)it->inf, colunas[j].nomeCampo) == 0){
+            if (strcmp((char *)it->inf, colunas[j].nome) == 0){
                 validar[i] = 1;   
-                indiceProj[i] = j;
+                indiceProj[i] = (char) j;
             }
         }
     }
@@ -668,7 +676,7 @@ inf_where *novoResWhere(void *tk,int id){
   return novo;
 }
 
-int validaColsWhere(Lista *tok,column *colunas,int qtdColunas){
+int validaColsWhere(Lista *tok,tp_table *colunas,int qtdColunas){
   if(!tok) return 1;
   for(Nodo *i = tok->prim; i; i = i->prox){
     inf_where *iw = (inf_where *)i->inf;
@@ -676,7 +684,7 @@ int validaColsWhere(Lista *tok,column *colunas,int qtdColunas){
       int achou = 0;
       char *str = (char *)iw->token;
       for(int j = 0; !achou && j < qtdColunas; j++)
-        achou = (strcmp(str,colunas[j].nomeCampo) == 0);
+        achou = (strcmp(str,colunas[j].nome) == 0);
       if(!achou){
         printf("A coluna %s não pertene a tabela.\n",str);
         return 0;
@@ -807,7 +815,7 @@ Lista *op_select(inf_select *select) {
         if(erro == ERRO_LEITURA_DADOS_DELETADOS) tuplasRemovidas++;
     }
     tuplasLidas-= tuplasRemovidas + 1;
-    column *pagina = getPage(bufferpoll, esquema, objeto, 0);
+    tupla *pagina = getPage(bufferpoll, esquema, objeto, 0);
     if(!pagina){
         printf("Tabela vazia.\n");
         free(bufferpoll);
@@ -816,20 +824,20 @@ Lista *op_select(inf_select *select) {
     }
 
     int *indiceProj = (int *)malloc(sizeof(int) * select->proj->tam);
-    if(!validaProj(select->proj, pagina, objeto.qtdCampos, indiceProj)){
+    if(!validaProj(select->proj, esquema, objeto.qtdCampos, indiceProj)){
         free(bufferpoll);
         free(esquema);
         free(indiceProj);
         return NULL;
     }
 
-    if(!validaColsWhere(select->tok, pagina, objeto.qtdCampos)){
+    if(!validaColsWhere(select->tok, esquema, objeto.qtdCampos)){
         free(bufferpoll);
         free(esquema);
         free(indiceProj);
         return NULL;
     }
-    int j,k;
+    int k;
     char abortar = 0;
     int qtdCamposProj =  ((char *)select->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : select->proj->tam;
     Lista *tupla = novaLista(NULL), *resultado = novaLista(NULL);
@@ -842,9 +850,9 @@ Lista *op_select(inf_select *select) {
             free(indiceProj);
             return NULL;
         }
-        for(k = j = 0; !abortar && k < bufferpoll[p].nrec; k++){
-            for(int i = 0; i < objeto.qtdCampos; i++, j++)
-                adcNodo(tupla, tupla->ult, (void *)(&pagina[j]));
+        for(k = 0; !abortar && k < bufferpoll[p].nrec; k++){
+            for(int i = 0; i < objeto.qtdCampos; i++)
+                adcNodo(tupla, tupla->ult, (void *)(&pagina[k].column[i]));
             char sat = 0;
 
             if(select->tok){

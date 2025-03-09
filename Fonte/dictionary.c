@@ -58,7 +58,7 @@ int existeAtributo(char *nomeTabela, column *c){
     tp_table *tabela;
     tp_buffer *bufferpoll;
     column *aux = NULL;
-    column *pagina = NULL;
+    tupla *pagina = NULL;
 
     if(iniciaAtributos(&objeto, &tabela, &bufferpoll, nomeTabela) != SUCCESS)
         return ERRO_DE_PARAMETRO;
@@ -76,10 +76,10 @@ int existeAtributo(char *nomeTabela, column *c){
     if(pagina != NULL){
         count = 0;
         for(x = 0; x < objeto.qtdCampos; x++){
-            if (!pagina[x].nomeCampo) continue;
+            if (!tabela[x].nome) continue;
             for(aux = c; aux != NULL; aux=aux->next) {
                 if (!aux->nomeCampo) continue;
-                if(objcmp(pagina[x].nomeCampo, aux->nomeCampo) == 0)
+                if(objcmp(tabela[x].nome, aux->nomeCampo) == 0)
                     count++;
             }
         }
