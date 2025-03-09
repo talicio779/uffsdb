@@ -384,29 +384,3 @@ void yyerror(char *s, ...) {
   fprintf(stderr, "\n");
   */
 }
-
-void getComando(char * input){
-    add_history(input);
-    size_t len = strlen(input);
-    char *buffer = malloc(len + 2);  // +2 para '\n' e '\0'
-    
-    strcpy(buffer, input);
-    buffer[len] = '\n';  // Adiciona quebra de linha
-    buffer[len + 1] = '\0';  // Null-terminator
-
-    yyin = fmemopen(buffer, len + 1, "r");
-    yyparse();
-
-    free(buffer);
-    fclose(yyin);
-}
-
-void historyInit(){
-    using_history();
-    
-    FILE *f = fopen("data/history.txt", "r");
-    if (!f) return ;
-
-    fclose(f);
-    read_history("data/history.txt"); 
-}
