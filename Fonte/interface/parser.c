@@ -340,7 +340,16 @@ int interface() {
                 }
             } else if (GLOBAL_PARSER.mode == OP_INSERT) {
                 if (GLOBAL_PARSER.step == 2) {
-                    printf("Expected token \"VALUES\" after object name.\n");
+                    if(GLOBAL_PARSER.parentesis == 1 && GLOBAL_PARSER.val_count == 1){
+                        printf("ERROR: Invalid syntax after \"VALUES\". Ensure that the values are correct.\n");
+                    }else if(GLOBAL_PARSER.parentesis == 0){
+                        printf("Invalid syntax.\n");
+                    }else if(GLOBAL_PARSER.val_count == 0){
+                        printf("Invalid syntax.\n");
+                    }else{
+                        printf("Expected token \"VALUES\" after object name.\n");
+                    }
+                    
                     GLOBAL_PARSER.consoleFlag = 0;
                 }
             }
