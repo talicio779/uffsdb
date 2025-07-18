@@ -48,6 +48,10 @@ int allColumnsExists(rc_insert *s_insert, table *tabela) {
 
 	for (i = 0; i < s_insert->N; i++)
 		if (retornaTamanhoTipoDoCampo(s_insert->columnName[i], tabela) == 0) {
+      if (!verificaNomeTabela(tabela)) {
+        printf("ERROR: table \"%s\" does not exist.\n", tabela->nome);
+        return 0;
+      }
 			printf("ERROR: column \"%s\" of relation \"%s\" does not exist.\n", s_insert->columnName[i], tabela->nome);
 			return 0;
 		}
@@ -433,7 +437,14 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
         		if(raiz != NULL) {
         			encontrou = buscaChaveBtree(raiz, temp->valorCampo); 
         			if (encontrou) {
-        				printf("ERROR: duplicate key value violates unique constraint \"%s_pkey\"\nDETAIL:  Key (%s)=(%s) already exists.\n",nome,temp->nomeCampo,temp->valorCampo);
+                //Compara para ver se é not null
+                if (tab2[j].chave == PK || tab2[j].chave == FK) {
+                  if(strcmp(temp->valorCampo, "0") == 0){
+                    printf("ERROR: NULL value in column '%s' violates NOT-NULL constraint.\n", temp->nomeCampo);
+                    return ERRO_NAO_INSERIR_EM_NOT_NULL;
+                  }
+                }
+        				printf("ERROR: duplicated key value violates unique constraint \"%s_pkey\"\nDETAIL:  Key (%s)=(%s) already exists.\n",nome,temp->nomeCampo,temp->valorCampo);
         				free(auxT); // Libera a memoria da estrutura.
         				//free(temp); // Libera a memoria da estrutura.
         				free(tab); // Libera a memoria da estrutura.
@@ -576,11 +587,13 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
             return ERRO_NO_TAMANHO_INTEGER;
           }
           while (i < strlen(auxC->valorCampo)){
+
             // Valida que o dado inserido é um número (ASCII entre 48~57) e evita erro quando tem carctere de nº negativo (45)
             if((auxC->valorCampo[i] >= 48 && auxC->valorCampo[i] <= 57) || (auxC->valorCampo[i] == 45 && strlen(auxC->valorCampo) > 1)){
               i++;
             }
             else{
+
               printf("ERROR: column \"%s\" expected integer.\n", auxC->nomeCampo);
   				    free(tab); // Libera a memoria da estrutura.
   				    free(tab2); // Libera a memoria da estrutura.
@@ -800,7 +813,7 @@ int validaColsWhere(Lista *tok,tp_table *colunas,int qtdColunas){
 
 void printConsulta(Lista *proj, Lista *result){
     if(!result->tam){
-        printf("\n 0 Linhas.\n");
+        printf("\n 0 Rows.\n");
         return;
     }
     //cabecalho
@@ -846,7 +859,7 @@ void printConsulta(Lista *proj, Lista *result){
         printf("\n");
     }
     printf("\n %d Linha%s.\n", result->tam, result->tam == 1 ? "" : "s");
-    }
+}
 
 void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColunasTab, int qtdColunasProj){
     adcNodo(resultado, resultado->ult, (void *)novaLista(NULL));
@@ -918,7 +931,7 @@ Lista *op_select(inf_select *select) {
   x--;
   column *pagina = getPage(bufferpoll, esquema, objeto, 0);
   if(!pagina){
-    printf("Tabela vazia.\n");
+    printf("Empty Table.\n");
     free(bufferpoll);
     free(esquema);
     return NULL;
