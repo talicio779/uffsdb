@@ -32,3 +32,13 @@ double get_inteiro(char []);
 double convertD(char c[]);
 
 void clear();
+
+/*
+* printa o histórico de comandos
+*/
+void printHistory();
+
+/*
+* limpa o histórico de comandos
+*/
+void deleteHistory();

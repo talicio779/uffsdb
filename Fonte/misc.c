@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <readline/history.h>
+
 ////
 #ifndef FMACROS // garante que macros.h não seja reincluída
    #include "macros.h"
@@ -35,7 +37,7 @@ int drawline(tp_buffer *buffpoll, tp_table *s, struct fs_objects objeto, int p, 
     if (num_page > PAGES || p > SIZE) {
         return ERRO_DE_PARAMETRO;
     }
-    int *pos_ini, aux = (p * tamTupla(s,objeto)) , num_reg = objeto.qtdCampos;
+    int *pos_ini, aux = (p * tamTuplaSemByteControle(s,objeto)) , num_reg = objeto.qtdCampos;
     pos_ini = &aux;
     int count, pos_aux, bit_pos;
     union c_double cd;
@@ -96,6 +98,20 @@ int drawline(tp_buffer *buffpoll, tp_table *s, struct fs_objects objeto, int p, 
     }
     printf("\n");
     return SUCCESS;
+}
+////
+void printHistory(){
+    HIST_ENTRY **comands_list = history_list();
+    if (!comands_list) return;
+        
+    for (int i = 0; comands_list[i]; i++) {
+        printf("%d    %s\n", i, comands_list[i]->line);
+    }
+}
+
+void deleteHistory(){
+    clear_history();
+    remove("data/hisroty.txt");
 }
 ////
 void contr() {
@@ -264,7 +280,12 @@ double get_inteiro(char v[]) {
 }
 
 double convertD(char u[]) {
-    return get_inteiro(u)+get_decimal(u);
+    int multiplicador = 1;
+    if(u[0] == '-'){
+        multiplicador = -1;
+        u++;
+    }
+    return get_inteiro(u)+get_decimal(u)*multiplicador;
     //Soma inteiro com decimal.ss
 }
 ///
