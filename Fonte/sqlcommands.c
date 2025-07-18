@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 ////
 #ifndef FBTREE // includes only if this flag is not defined (preventing duplication)
    #include "btree.h"
@@ -481,33 +482,50 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
             offsetBuffer += auxT[t].tam;
         }
         else if (auxT[t].tipo == 'I'){ // Grava um dado do tipo inteiro.
-            i = 0;
-            while (i < strlen(auxC->valorCampo)){
-                if(auxC->valorCampo[i] < 48 || auxC->valorCampo[i] > 57){
-                    printf("ERROR: column \"%s\" expectet integer.\n", auxC->nomeCampo);
+          i = 0;
+          //Variável de controle para validação do conteúdo de auxC->valorCampo (char*)
+          long parsedInputToCheckInteger;
+          sscanf(auxC->valorCampo, "%ld", &parsedInputToCheckInteger);
+          if (parsedInputToCheckInteger < INT32_MIN || parsedInputToCheckInteger > INT32_MAX){
+            printf("ERROR: invalid integer length.\n");
+			      free(tab); // Libera a memoria da estrutura.
+			      free(tab2); // Libera a memoria da estrutura.
+			      free(auxT); // Libera a memoria da estrutura.
+			      free(temp); // Libera a memoria da estrutura.
+			      fclose(dados);
+            return ERRO_NO_TAMANHO_INTEGER;
+          }
+          while (i < strlen(auxC->valorCampo)){
+            // Valida que o dado inserido é um número (ASCII entre 48~57) e evita erro quando tem carctere de nº negativo (45)
+            if((auxC->valorCampo[i] >= 48 && auxC->valorCampo[i] <= 57) || (auxC->valorCampo[i] == 45 && strlen(auxC->valorCampo) > 1)){
+              i++;
+            }
+            else{
+              printf("ERROR: column \"%s\" expected integer.\n", auxC->nomeCampo);
   				    free(tab); // Libera a memoria da estrutura.
   				    free(tab2); // Libera a memoria da estrutura.
   				    free(auxT); // Libera a memoria da estrutura.
   				    //free(temp); // Libera a memoria da estrutura.
   				    fclose(dados);
-                    return ERRO_NO_TIPO_INTEIRO;
-                }
-            i++;
+              return ERRO_NO_TIPO_INTEIRO;
             }
-            int valorInteiro = 0;
-            sscanf(auxC->valorCampo,"%d",&valorInteiro);
-            memcpy(buffer + offsetBuffer, &valorInteiro,sizeof(valorInteiro));
-            offsetBuffer += sizeof(valorInteiro);
+          }
+          int valorInteiro = 0;
+          sscanf(auxC->valorCampo,"%d",&valorInteiro);
+          fwrite(&valorInteiro,sizeof(valorInteiro),1,dados);
         }
         else if (auxT[t].tipo == 'D'){ // Grava um dado do tipo double.
             x = 0;
             while (x < strlen(auxC->valorCampo)){
-                if((auxC->valorCampo[x] < 48 || auxC->valorCampo[x] > 57) && (auxC->valorCampo[x] != 46)){
+                // Valida que o dado inserido é um número (ASCII entre 48~57) e evita erro quando tem carctere de nº negativo (45)
+                if((auxC->valorCampo[x] >= 48 && auxC->valorCampo[x] <= 57) || auxC->valorCampo[x] == 45 || auxC->valorCampo[x] == 46){
+                  x++;
+                }
+                else{
                     printf("ERROR: column \"%s\" expect double.\n", auxC->nomeCampo);
                     erro = ERRO_NO_TIPO_DOUBLE;
                     goto fim;
                 }
-                x++;
             }
             char *endptr;
             double valorDouble = strtod(auxC->valorCampo, &endptr);
