@@ -1,5 +1,8 @@
 all: uffsdb
 
+debug: interface/y.tab.c interface/y.tab.h interface/lex.yy.c *.c *.h
+	gcc -DDEBUG *.c interface/*.c -lfl -lm -pthread -lreadline -o uffsdb -Wall -g
+
 uffsdb: interface/y.tab.c interface/y.tab.h interface/lex.yy.c *.c *.h
 	gcc *.c interface/*.c -lfl -lm -pthread -lreadline -o uffsdb -Wall -g
 
@@ -11,3 +14,4 @@ clean:
 	rm uffsdb -f
 	rm data/ -RIf
 	rm interface/y.tab.c interface/y.tab.h interface/lex.yy.c
+

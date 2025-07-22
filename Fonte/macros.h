@@ -56,3 +56,14 @@
 #define LEN_DB_NAME_IO (LEN_DB_NAME << 1)
 #define DB_EXISTS 1
 #define DB_NOT_EXISTS 24
+
+
+// Debugging macros
+#ifdef DEBUG
+    #define DEBUG_PRINT(fmt, ...) \
+        do { fprintf(stdout, "[DEBUG] " fmt "\n", ##__VA_ARGS__); } while (0)
+#else
+    #define DEBUG_PRINT(fmt, ...) \
+        do { } while (0)
+#endif
+
