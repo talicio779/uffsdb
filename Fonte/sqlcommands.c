@@ -345,41 +345,39 @@ int verificaChavePK(char *nomeTabela, column *c, char *nomeCampo, char *valorCam
 
         for(j = 0; j < bufferpoll[page].nrec; j++){
             for(int i = 0; i < objeto.qtdCampos; i++){
-                if (pagina[j].column[i].nomeCampo) {
-                    column *c = &pagina[j].column[i];
-                    if (objcmp(c->nomeCampo, nomeCampo) == 0) {
-                        if (c->tipoCampo == 'S') {
-                            if (objcmp(c->valorCampo, valorCampo) == 0){
-                                free(pagina);
-                                free(bufferpoll);
-                                free(tabela);
-                                return ERRO_CHAVE_PRIMARIA;
-                            }
-                        } else if (c->tipoCampo == 'I') {
-                            int *n = (int *)&c->valorCampo[0];
+                column *c = &pagina[j].column[i];
+                if (objcmp(c->nomeCampo, nomeCampo) == 0) {
+                    if (c->tipoCampo == 'S') {
+                        if (objcmp(c->valorCampo, valorCampo) == 0){
+                            free(pagina);
+                            free(bufferpoll);
+                            free(tabela);
+                            return ERRO_CHAVE_PRIMARIA;
+                        }
+                    } else if (c->tipoCampo == 'I') {
+                        int *n = (int *)&c->valorCampo[0];
 
-                            if (*n == atoi(valorCampo)) {
-                                free(pagina);
-                                free(bufferpoll);
-                                free(tabela);
-                                return ERRO_CHAVE_PRIMARIA;
-                            }
-                        } else if (c->tipoCampo == 'D'){
-                            double *nn = (double *)&c->valorCampo[0];
+                        if (*n == atoi(valorCampo)) {
+                            free(pagina);
+                            free(bufferpoll);
+                            free(tabela);
+                            return ERRO_CHAVE_PRIMARIA;
+                        }
+                    } else if (c->tipoCampo == 'D'){
+                        double *nn = (double *)&c->valorCampo[0];
 
-                            if (*nn == atof(valorCampo)){
-                                free(pagina);
-                                free(bufferpoll);
-                                free(tabela);
-                                return ERRO_CHAVE_PRIMARIA;
-                            }
-                        } else if (c->tipoCampo == 'C'){
-                            if (c->valorCampo == valorCampo){
-                                free(pagina);
-                                free(bufferpoll);
-                                free(tabela);
-                                return ERRO_CHAVE_PRIMARIA;
-                            }
+                        if (*nn == atof(valorCampo)){
+                            free(pagina);
+                            free(bufferpoll);
+                            free(tabela);
+                            return ERRO_CHAVE_PRIMARIA;
+                        }
+                    } else if (c->tipoCampo == 'C'){
+                        if (c->valorCampo == valorCampo){
+                            free(pagina);
+                            free(bufferpoll);
+                            free(tabela);
+                            return ERRO_CHAVE_PRIMARIA;
                         }
                     }
                 }
