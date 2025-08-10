@@ -21,10 +21,13 @@
 #define ERRO_REMOVER_ARQUIVO -17
 #define ERRO_REMOVER_ARQUIVO_OBJECT -18
 #define ERRO_REMOVER_ARQUIVO_SCHEMA -19
+#define ERRO_NO_TAMANHO_INTEGER -20
 #define ERRO_LEITURA_DADOS_DELETADOS -20
 #define ERRO_INDEX_NULL -21
 
 // ERROS ponteiro
+
+#define ERRO_NAO_INSERIR_EM_NOT_NULL -20
 #define ERRO_DE_ALOCACAO NULL
 #define ERRO_ABRIR_ESQUEMA NULL
 #define ERRO_NOME_TABELA_INVALIDO NULL
@@ -53,3 +56,14 @@
 #define LEN_DB_NAME_IO (LEN_DB_NAME << 1)
 #define DB_EXISTS 1
 #define DB_NOT_EXISTS 24
+
+
+// Debugging macros
+#ifdef DEBUG
+    #define DEBUG_PRINT(fmt, ...) \
+        do { fprintf(stdout, "[DEBUG] " fmt "\n", ##__VA_ARGS__); } while (0)
+#else
+    #define DEBUG_PRINT(fmt, ...) \
+        do { } while (0)
+#endif
+
