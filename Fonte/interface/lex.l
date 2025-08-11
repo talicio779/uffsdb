@@ -42,11 +42,12 @@
 (?i:DROP)						return DROP;
 (?i:CONTRIBUTORS)               return CONTR;
 help							return HELP;
+[\\]his						return HISTORY;
+[\\]his+[^\n]*				{invalidCommand(yytext);};
 [\\][h]							return HELP;
 [\\][h]+[^\n]*					{invalidCommand(yytext);};
 [\\][\?]						return HELP;
 (?i:CLEAR)						return CLEAR;
-
 [,]								return *yytext;
 [;]								return *yytext;
 [-]								return *yytext;
@@ -65,20 +66,21 @@ help							return HELP;
 ([>][=]|[<][=]|[=]|[!][=]|[>]|[<]) {yylval.strval = yytext; return RELACIONAL;};
 
 \n								{
-									if (GLOBAL_PARSER.mode != 0) {
-										if (GLOBAL_PARSER.parentesis)
-											printf("%s(# ", connected.db_name);
-										else
-											printf("%s-# ", connected.db_name);
-									} else if (connected.conn_active) {
-								 		if (GLOBAL_PARSER.consoleFlag)
-							                GLOBAL_PARSER.consoleFlag = 0;
-							            else
-							                printf("%s=# ", connected.db_name);
-									} else
-								 		printf(">");
+									// if (GLOBAL_PARSER.mode != 0) {
+									// 	if (GLOBAL_PARSER.parentesis)
+									// 		printf("%s(# ", connected.db_name);
+									// 	else
+									// 		printf("%s-# ", connected.db_name);
+									// } else if (connected.conn_active) {
+								 	// 	if (GLOBAL_PARSER.consoleFlag)
+							        //         GLOBAL_PARSER.consoleFlag = 0;
+							        //     else
+							        //         printf("%s=# ", connected.db_name);
+									// } else
+								 	// 	printf(">");
 								};
-
+[\\]dhis						return DELETE_HISTORY;
+[\\]dhis+[^\n]*				{invalidCommand(yytext);};
 [\\][c]							return CONNECT;
 [\\][c]+[^ ^\n]*		{invalidCommand(yytext);};
 [\\][c]+[ ]*[\n]		{invalidCommand("\\c <enter>'. Expecting '\\c DBNAME"); return 0;};
@@ -91,5 +93,6 @@ help							return HELP;
 [\\][t]+						return LIST_TABLE;
 [\\][t]+[^ ^\n]*		{invalidCommand(yytext);};
 [\\][t]+[ ]*[\n]		{invalidCommand("\\t <enter>'. Expecting '\\t TABLENAME"); return 0;};
+
 [ \t]+							/* ignore whitespace */;
 %%

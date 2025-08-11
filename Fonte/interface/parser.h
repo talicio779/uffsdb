@@ -14,6 +14,10 @@
 #define OP_CREATE_INDEX     7
 #define OP_DELETE           8
 
+#ifndef FCOMMANDHANDLER
+   #include "commandHandler.h"
+#endif
+
 /* Estrutura global que guarda as informações obtidas pelo yacc
  * na identificação dos tokens
  */
@@ -25,11 +29,9 @@ extern rc_parser GLOBAL_PARSER;
 
 /* Funcções do yacc
  */
-int yyparse();
 int yylex();
 int yylex_destroy();
 extern int  yylineno;
-
 /*
   Reseta as estruturas da estrutura SELECT.
 */
@@ -128,7 +130,8 @@ void clearGlobalStructs();
  */
 void setMode(char mode);
 
-/* Recupera a operação atual que será realizada através
- * dos tokens iniciais.
- */
-char getMode();
+/*
+* Realiza operações antes de finalizar o programa 
+* op1: grava o histórico
+*/
+void quit(int flag);
