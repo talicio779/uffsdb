@@ -579,7 +579,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
         else if (auxT[t].tipo == 'I'){ // Grava um dado do tipo inteiro.
           i = 0;
           while (i < strlen(auxC->valorCampo)){
-              if(auxC->valorCampo[i] < 48 || auxC->valorCampo[i] > 57){
+              if((auxC->valorCampo[i] < 48 || auxC->valorCampo[i] > 57) && auxC->valorCampo[i] != 45){
                   printf("ERROR: column \"%s\" expectet integer.\n", auxC->nomeCampo);
             free(tab); // Libera a memoria da estrutura.
             free(tab2); // Libera a memoria da estrutura.
@@ -599,7 +599,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
         else if (auxT[t].tipo == 'D'){ // Grava um dado do tipo double.
           x = 0;
           while (x < strlen(auxC->valorCampo)){
-              if((auxC->valorCampo[x] < 48 || auxC->valorCampo[x] > 57) && (auxC->valorCampo[x] != 46)){
+              if((auxC->valorCampo[x] < 48 || auxC->valorCampo[x] > 57) && (auxC->valorCampo[x] != 46) && (auxC->valorCampo[x] != 45)){
                   printf("ERROR: column \"%s\" expect double.\n", auxC->nomeCampo);
                   erro = ERRO_NO_TIPO_DOUBLE;
                   goto fim;
