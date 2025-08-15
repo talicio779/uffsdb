@@ -34,6 +34,7 @@ typedef struct column{ // Estrutura utilizada para inserir em uma tabela, exclui
 typedef struct tupla {
     unsigned int offset;
     uint ncols; // Número de colunas na tupla.
+    uint bufferPage; // Página do buffer onde a tupla está armazenada.
     column *column;
 }tupla;
 

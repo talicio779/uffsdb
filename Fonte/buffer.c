@@ -87,6 +87,7 @@ tupla *getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, in
 
 
         tuplas[indiceTupla].column = (column *)malloc(sizeof(column) * objeto.qtdCampos);
+        tuplas[indiceTupla].bufferPage = page;
         for (int ic = 0; ic < objeto.qtdCampos; ic++){
             column *c = &tuplas[indiceTupla].column[ic];
 
