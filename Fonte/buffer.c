@@ -79,14 +79,15 @@ tupla *getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, in
             i+=tamTupla(campos, objeto);
             continue;
         }
-        tuplas[indiceTupla].endereco = i; //para o 
-
+        tuplas[indiceTupla].offset = i; 
+        tuplas[indiceTupla].ncols = objeto.qtdCampos;
         i++; //para o byte de deleted
         memcpy(nullos, buffer[page].data + i, objeto.qtdCampos);
         i += objeto.qtdCampos;
 
 
         tuplas[indiceTupla].column = (column *)malloc(sizeof(column) * objeto.qtdCampos);
+        tuplas[indiceTupla].bufferPage = page;
         for (int ic = 0; ic < objeto.qtdCampos; ic++){
             column *c = &tuplas[indiceTupla].column[ic];
 
@@ -170,9 +171,6 @@ char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma 
     
     fseek(dados, -1, SEEK_CUR);
     fread(linha, sizeof(char), tamTpl, dados); //Traz a tupla inteira do arquivo
-
-
-  
 
     fclose(dados);
     return linha;
