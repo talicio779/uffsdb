@@ -130,6 +130,10 @@ void clearGlobalStructs();
  */
 void setMode(char mode);
 
+/* Retorna o modo atual do identificador, que será usado
+ */
+char getMode();
+
 /*
 * Realiza operações antes de finalizar o programa 
 * op1: grava o histórico

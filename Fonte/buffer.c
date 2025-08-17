@@ -16,25 +16,12 @@
 static int isDeleted(char *linha);
 
 // INICIALIZACAO DO BUFFER
-tp_buffer * initbuffer(){
+tp_buffer * initbuffer() {
+    tp_buffer *bp = (tp_buffer*)calloc(PAGES, sizeof(tp_buffer));
 
-    tp_buffer *bp = (tp_buffer*)malloc(sizeof(tp_buffer)*PAGES);
-    memset(bp, 0, sizeof(tp_buffer)*PAGES);
-
-    int i;
-    tp_buffer *temp = bp;
-
-    if(bp == NULL)
-        return ERRO_DE_ALOCACAO;
-    for (i = 0;i < PAGES; i++){
-        temp->db=0;
-        temp->pc=0;
-        temp->nrec=0;
-        temp++;
-    }
-
-    return bp;
+    return bp == NULL ? ERRO_DE_ALOCACAO : bp;
 }
+
 //// imprime os dados no buffer (deprecated?)
 int printbufferpoll(tp_buffer *buffpoll, tp_table *s,struct fs_objects objeto, int num_page){
 
@@ -224,7 +211,7 @@ void cria_campo(int tam, int header, char *val, int x) {
     Parametros: Buffer e número do bloco.
     Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
-int writeBufferToDisk(tp_buffer *bufferpoll, int blockNumber, struct fs_objects *objeto) {
+int writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects *objeto, int blockNumber, int blockOffset) {
     char directory[LEN_DB_NAME_IO];
     strcpy(directory, connected.db_directory);
     strcat(directory, objeto->nArquivo);
@@ -234,10 +221,10 @@ int writeBufferToDisk(tp_buffer *bufferpoll, int blockNumber, struct fs_objects 
         printf("ERROR: Unable to open file for writing.\n");
         return 0;
     }
-
+    
     fseek(dados, blockNumber*SIZE, SEEK_SET);
 
-    fwrite(bufferpoll->data, SIZE, 1, dados);
+    fwrite(bufferpoll->data, blockOffset, 1, dados); //TODO: arrumar o blockOffset
 
     fflush(dados);
 

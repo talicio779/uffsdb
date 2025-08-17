@@ -808,10 +808,10 @@ Lista *op_select(inf_query *select) {
         printf("ERROR: no memory available to allocate buffer.\n");
         return NULL;
     }
-    int tuplasLidas = 0, erro = SUCCESS;
+    int tuplaCount = 0, erro = SUCCESS;
     while (erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS){
-        erro = colocaTuplaBuffer(bufferpoll, tuplasLidas, esquema, objeto);
-        if(erro == SUCCESS) tuplasLidas++;
+        erro = colocaTuplaBuffer(bufferpoll, tuplaCount, esquema, objeto);
+        tuplaCount++;
     }
     tupla *pagina = getPage(bufferpoll, esquema, objeto, 0);
     if(!pagina){
@@ -839,7 +839,7 @@ Lista *op_select(inf_query *select) {
     char abortar = 0;
     int qtdCamposProj =  ((char *)select->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : select->proj->tam;
     Lista *resultado = novaLista(NULL);
-    for(int p = 0; !abortar && tuplasLidas; tuplasLidas -= bufferpoll[p++].nrec){
+    for(int p = 0; !abortar && bufferpoll[p].nrec; p++) {
         pagina = getPage(bufferpoll, esquema, objeto, p);
         if(pagina == ERRO_PARAMETRO){
             printf("ERROR: could not open the table.\n");
@@ -900,15 +900,15 @@ void op_delete(inf_query *delete) {
         return;
     }
 
-    int pageCount = 0;
+    int tuplaCount = 0;
     int erro;
     do {
-        erro = colocaTuplaBuffer(bufferpoll, pageCount, esquema, objeto);
-        pageCount++;
+        erro = colocaTuplaBuffer(bufferpoll, tuplaCount, esquema, objeto);
+        tuplaCount++;
     } while(erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS);
-    pageCount--; // ajusta para o número correto de páginas lidas
+    tuplaCount--; // ajusta para o número correto de páginas lidas
 
-    if (pageCount <= 0) {
+    if (tuplaCount <= 0) {
         printf("Tabela vazia.\n");
         free(bufferpoll);
         free(esquema);
@@ -925,7 +925,7 @@ void op_delete(inf_query *delete) {
     char abortar = 0;
     int deleteAll = (delete->tok == NULL);
 
-    for (int p = 0; !abortar && p < pageCount; p++) {
+    for (int p = 0; !abortar && bufferpoll[p].nrec; p++) {
         tupla *pagina = getPage(bufferpoll, esquema, objeto, p);
         if(pagina == ERRO_PARAMETRO){
             printf("ERROR: could not open the table.\n");
@@ -954,7 +954,7 @@ void op_delete(inf_query *delete) {
         }
 
         if (bufferpoll[p].db) {
-            writeBufferToDisk(bufferpoll, p, &objeto);
+            writeBufferToDisk(bufferpoll, &objeto, p, tuplaCount*tamTupla(esquema, objeto));
         } else {
             fprintf(stderr, "ERROR: failed to persist changes to disk\n");
             free(bufferpoll);

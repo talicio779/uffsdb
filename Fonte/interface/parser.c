@@ -279,7 +279,7 @@ int interface() {
     char prompt[LEN_DB_NAME + 4]; // 3 para "=# " +1 para \0
     Lista *resultado;
     connect("uffsdb"); // conecta automaticamente no banco padrão
-    SELECT.tok = SELECT.proj = NULL;
+    QUERY.tok = QUERY.proj = NULL;
     historyInit();
     while(1){
         if (!connected.conn_active) {
@@ -309,9 +309,9 @@ int interface() {
                                 printf("WARNING: Nothing to be inserted. Command ignored.\n");
                             break;
                         case OP_SELECT:
-                            resultado = op_select(&SELECT);
+                            resultado = op_select(&QUERY);
                             if(resultado){
-                            printConsulta(SELECT.proj, resultado);
+                            printConsulta(QUERY.proj, resultado);
                             resultado = NULL;
                             }
                             break;

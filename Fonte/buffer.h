@@ -67,6 +67,6 @@ void cria_campo(int , int , char *, int );
     Parametros: Buffer e número do bloco.
     Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
-int writeBufferToDisk(tp_buffer *bufferpoll, int blockNumber, struct fs_objects *objeto);
+int writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects *objeto, int blockNumber, int blockOffset);
 
 void addColumn(column **colList, column *c);
