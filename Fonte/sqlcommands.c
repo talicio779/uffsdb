@@ -943,7 +943,6 @@ void op_delete(inf_query *delete) {
                     Lista *l2 = relacoes(l);
                     shouldDelete = (logPosfixa(l2) != 0);
                 }
-                free(tupla);
             }
 
             if (shouldDelete) {
@@ -952,6 +951,7 @@ void op_delete(inf_query *delete) {
                 deletedTuples++;
             }
         }
+        free(pagina);
 
         if (bufferpoll[p].db) {
             writeBufferToDisk(bufferpoll, &objeto, p, tuplaCount*tamTupla(esquema, objeto));
