@@ -1,6 +1,12 @@
 # uffsdb
 A simple educational DBMS
 
+# dependencies
+ Library readline
+
+ ## For Ubuntu/Debian-based systems, run:
+ ```sudo apt-get install libreadline-dev```
+
 # how to comipile
  uffsdb/Fonte/make
 

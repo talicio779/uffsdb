@@ -64,9 +64,9 @@ void cria_campo(int , int , char *, int );
 
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Utilizada para gravar as mudanças do buffer no disco.
-    Parametros: Buffer e tupla modificada.
+    Parametros: Buffer e número do bloco.
     Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
-int writeBufferToDisk(tp_buffer *bufferpoll);
+int writeBufferToDisk(tp_buffer *bufferpoll, int blockNumber, struct fs_objects *objeto);
 
 void addColumn(column **colList, column *c);

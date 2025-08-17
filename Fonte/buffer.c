@@ -221,15 +221,13 @@ void cria_campo(int tam, int header, char *val, int x) {
 
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Utilizada para gravar as mudanças do buffer no disco.
-    Parametros: Buffer e tupla modificada.
+    Parametros: Buffer e número do bloco.
     Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
-int writeBufferToDisk(tp_buffer *bufferpoll) {
-    struct fs_objects dicio; 
-
+int writeBufferToDisk(tp_buffer *bufferpoll, int blockNumber, struct fs_objects *objeto) {
     char directory[LEN_DB_NAME_IO];
     strcpy(directory, connected.db_directory);
-    strcat(directory, dicio.nArquivo);
+    strcat(directory, objeto->nArquivo);
 
     FILE *dados = fopen(directory, "r+b");
     if (!dados) {
@@ -237,7 +235,7 @@ int writeBufferToDisk(tp_buffer *bufferpoll) {
         return 0;
     }
 
-    fseek(dados, bufferpoll->position, SEEK_SET);
+    fseek(dados, blockNumber*SIZE, SEEK_SET);
 
     fwrite(bufferpoll->data, SIZE, 1, dados);
 

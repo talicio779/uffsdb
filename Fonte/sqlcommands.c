@@ -854,7 +854,7 @@ Lista *op_select(inf_query *select) {
 
             if(select->tok){
                 Lista *l = resArit(select->tok, tupla);
-                if(l){
+                if(l) {
                     Lista *l2 = relacoes(l);
                     sat = (logPosfixa(l2) != 0);
                 }
@@ -899,31 +899,34 @@ void op_delete(inf_query *delete) {
         printf("ERROR: no memory available to allocate buffer.\n");
         return;
     }
-    int erro = SUCCESS;
-    int x, deletedTuples = 0;
-    for(x = 0; erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS; x++)
-        erro = colocaTuplaBuffer(bufferpoll, x, esquema, objeto);
-    x--;
 
-    column *pagina = getPage(bufferpoll, esquema, objeto, 0);
-    if(!pagina){
+    int pageCount = 0;
+    int erro;
+    do {
+        erro = colocaTuplaBuffer(bufferpoll, pageCount, esquema, objeto);
+        pageCount++;
+    } while(erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS);
+    pageCount--; // ajusta para o número correto de páginas lidas
+
+    if (pageCount <= 0) {
         printf("Tabela vazia.\n");
         free(bufferpoll);
         free(esquema);
         return;
     }
 
-    if(!validaColsWhere(delete->tok, pagina, objeto.qtdCampos)){
+    if(!validaColsWhere(delete->tok, esquema, objeto.qtdCampos)){
         free(bufferpoll);
         free(esquema);
         return;
     }
 
+    int deletedTuples = 0;
     char abortar = 0;
     int deleteAll = (delete->tok == NULL);
 
-    for (int p = 0; !abortar && x; x -= bufferpoll[p++].nrec) {
-        pagina = getPage(bufferpoll, esquema, objeto, p);
+    for (int p = 0; !abortar && p < pageCount; p++) {
+        tupla *pagina = getPage(bufferpoll, esquema, objeto, p);
         if(pagina == ERRO_PARAMETRO){
             printf("ERROR: could not open the table.\n");
             free(bufferpoll);
@@ -931,15 +934,10 @@ void op_delete(inf_query *delete) {
             return;
         }
 
-        for (int k = 0; !abortar && k < bufferpoll[p].nrec; k++) {
+        for (unsigned int k = 0; !abortar && k < bufferpoll[p].nrec; k++) {
             int shouldDelete = deleteAll;
-
             if (!deleteAll) {
-                Lista *tupla = novaLista(NULL);
-                for (int i = 0; i < objeto.qtdCampos; i++) {
-                    adcNodo(tupla, tupla->ult, (void *)(&pagina[k * objeto.qtdCampos + i]));
-                }
-
+                tupla *tupla = &pagina[k];
                 Lista *l = resArit(delete->tok, tupla);
                 if (l) {
                     Lista *l2 = relacoes(l);
@@ -949,20 +947,24 @@ void op_delete(inf_query *delete) {
             }
 
             if (shouldDelete) {
-                pagina[k * objeto.qtdCampos].valorCampo = TUPLA_DELETADA;
+                *(bufferpoll[p].data+pagina[k].offset) = 1; //marca a tupla como deletada
+                bufferpoll[p].db = 1; //marca a página como modificada
                 deletedTuples++;
             }
         }
+
+        if (bufferpoll[p].db) {
+            writeBufferToDisk(bufferpoll, p, &objeto);
+        } else {
+            fprintf(stderr, "ERROR: failed to persist changes to disk\n");
+            free(bufferpoll);
+            free(esquema);
+            return;
+        }
     }
 
-    if(deletedTuples == 0) {
-        printf("DELETED %d %s\n", deletedTuples, (deletedTuples > 1) ? "rows" : "row"); 
-    } 
-    
-    if(writeBufferToDisk(bufferpoll)) {
-        printf("DELETED %d %s\n", deletedTuples, (deletedTuples > 1) ? "rows" : "row"); 
-    }
-    
+    printf("DELETED %d %s\n", deletedTuples, (deletedTuples != 1) ? "rows" : "row");
+
     free(bufferpoll);
     free(esquema);
 }
