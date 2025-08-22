@@ -1,6 +1,6 @@
-# Abrindo o arquivo data/DB.dat
+# Opening data/DB.dat
 
-O arquivo `data/DB.dat` é aberto no modo **`a+b`** (leitura e escrita binária, com criação se não existir). Em seguida, a função verifica se o nome da database (`db_name`) excede o tamanho máximo de [[Macros#Tamanhos|20]] caracteres. Caso exceda, o nome será truncado, e um aviso será exibido.
+The file `data/DB.dat` is open as  **`a+b`** (binary read and write - if it does not exist, it will be created). Next, the database name is verified (`db_name`) is bigger than the maximum allowed [see [Macros#Tamanhos|20]]. If it is the case, the name will be truncated.
 
 ```C
 void createDB(char *db_name) {
