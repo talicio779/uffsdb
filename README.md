@@ -4,10 +4,10 @@ A simple educational DBMS
 # dependencies
  Library readline
 
- ## For Ubuntu/Debian-based systems, run:
+ - For Ubuntu/Debian-based systems, run:
  ```sudo apt-get install libreadline-dev```
 
-# how to comipile
+# how to compile
  uffsdb/Fonte/make
 
 # how to execute

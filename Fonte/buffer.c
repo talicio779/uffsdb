@@ -212,6 +212,7 @@ void cria_campo(int tam, int header, char *val, int x) {
     Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
 int writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects *objeto, int blockNumber, int blockOffset) {
+    int success = 1; // flag de sucesso porque sucesso deveria valer 1 não 0!
     char directory[LEN_DB_NAME_IO];
     strcpy(directory, connected.db_directory);
     strcat(directory, objeto->nArquivo);
@@ -230,7 +231,7 @@ int writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects *objeto, int bloc
 
     fclose(dados);
 
-    return SUCCESS;
+    return success;
 }
 
 static int isDeleted(char *linha){

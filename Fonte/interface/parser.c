@@ -309,14 +309,18 @@ int interface() {
                                 printf("WARNING: Nothing to be inserted. Command ignored.\n");
                             break;
                         case OP_SELECT:
-                            resultado = op_select(&QUERY);
-                            if(resultado){
-                            printConsulta(QUERY.proj, resultado);
-                            resultado = NULL;
+                            resultado = valeriaVaiPensarNissoDepois(&QUERY, 's');
+                            if (resultado) {
+                                printConsulta(QUERY.proj, resultado);
+                                resultado = NULL;
                             }
                             break;
                         case OP_DELETE:
-                            op_delete(&QUERY);
+                            resultado = valeriaVaiPensarNissoDepois(&QUERY, 'd');
+                            if (resultado) {
+                                op_delete(resultado, QUERY.tabela);
+                                resultado = NULL;
+                            }
                             break;
                         case OP_CREATE_TABLE:
                             createTable(&GLOBAL_DATA);

@@ -867,7 +867,7 @@ Lista *op_select(inf_query *select) {
     }
     if(abortar) resultado = NULL;
     
-    free(indiceProj); indiceProj = NULL;
+    free(indiceProj);
     free(esquema); esquema = NULL;
     free(bufferpoll); bufferpoll = NULL;
     return resultado;
@@ -875,87 +875,32 @@ Lista *op_select(inf_query *select) {
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Utilizada para deletar tuplas.
     Parametros: Nome da tabela (char).
-    Retorno:    Número de tuplas deletadas.
+    Retorno:    Void.
    ---------------------------------------------------------------------------------------------*/
-void op_delete(inf_query *delete) {
+void op_delete(Lista *toDeleteTuples, char *tabelaName) {
     tp_table *esquema;
-    tp_buffer *bufferpoll;
-    struct fs_objects objeto;
-    if(!verificaNomeTabela(delete->tabela)){
-        printf("\nERROR: relation \"%s\" was not found.\n\n\n", delete->tabela);
-        return;
-    }
-    objeto = leObjeto(delete->tabela);
+    struct fs_objects objeto = leObjeto(tabelaName);
     esquema = leSchema(objeto);
-    if(esquema == ERRO_ABRIR_ESQUEMA){
-        printf("ERROR: schema cannot be created.\n");
-        free(esquema);
-        return;
-    }
-    bufferpoll = initbuffer();
-    if(bufferpoll == ERRO_DE_ALOCACAO){
-        free(bufferpoll);
-        free(esquema);
-        printf("ERROR: no memory available to allocate buffer.\n");
-        return;
-    }
+    tp_buffer *bufferpoll = initbuffer();
+    int countDeletedTuples = 0;
 
-    int tuplaCount = 0;
-    int erro;
+    int tuplaCount = 0, erro;
     do {
         erro = colocaTuplaBuffer(bufferpoll, tuplaCount, esquema, objeto);
         tuplaCount++;
     } while(erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS);
     tuplaCount--; // ajusta para o número correto de páginas lidas
 
-    if (tuplaCount <= 0) {
-        printf("Tabela vazia.\n");
-        free(bufferpoll);
-        free(esquema);
-        return;
+    for (Nodo *temp = toDeleteTuples->prim; temp; temp = temp->prox) {
+        tupla *t = (tupla *)temp->inf;
+        *(bufferpoll[t->bufferPage].data+t->offset) = 1; //marca a tupla como deletada
+        bufferpoll[t->bufferPage].db = 1; //marca a página como modificada
+        countDeletedTuples++;
     }
 
-    if(!validaColsWhere(delete->tok, esquema, objeto.qtdCampos)){
-        free(bufferpoll);
-        free(esquema);
-        return;
-    }
-
-    int deletedTuples = 0;
-    char abortar = 0;
-    int deleteAll = (delete->tok == NULL);
-
-    for (int p = 0; !abortar && bufferpoll[p].nrec; p++) {
-        tupla *pagina = getPage(bufferpoll, esquema, objeto, p);
-        if(pagina == ERRO_PARAMETRO){
-            printf("ERROR: could not open the table.\n");
-            free(bufferpoll);
-            free(esquema);
-            return;
-        }
-
-        for (unsigned int k = 0; !abortar && k < bufferpoll[p].nrec; k++) {
-            int shouldDelete = deleteAll;
-            if (!deleteAll) {
-                tupla *tupla = &pagina[k];
-                Lista *l = resArit(delete->tok, tupla);
-                if (l) {
-                    Lista *l2 = relacoes(l);
-                    shouldDelete = (logPosfixa(l2) != 0);
-                }
-            }
-
-            if (shouldDelete) {
-                *(bufferpoll[p].data+pagina[k].offset) = 1; //marca a tupla como deletada
-                bufferpoll[p].db = 1; //marca a página como modificada
-                deletedTuples++;
-            }
-        }
-        free(pagina);
-
-        if (bufferpoll[p].db) {
-            writeBufferToDisk(bufferpoll, &objeto, p, tuplaCount*tamTupla(esquema, objeto));
-        } else {
+    for (int p = 0; p < PAGES && bufferpoll[p].nrec; p++) {
+        int result = writeBufferToDisk(bufferpoll, &objeto, p, bufferpoll->nrec*tamTupla(esquema, objeto));
+        if (!result) {
             fprintf(stderr, "ERROR: failed to persist changes to disk\n");
             free(bufferpoll);
             free(esquema);
@@ -963,10 +908,106 @@ void op_delete(inf_query *delete) {
         }
     }
 
-    printf("DELETED %d %s\n", deletedTuples, (deletedTuples != 1) ? "rows" : "row");
+    printf("DELETED %d %s\n", countDeletedTuples, (countDeletedTuples != 1) ? "rows" : "row");
 
     free(bufferpoll);
     free(esquema);
+}
+
+Lista *valeriaVaiPensarNissoDepois(inf_query *query, char tipo) { //TODO: Renomear função
+    tp_table *esquema;
+    tp_buffer *bufferpoll;
+    struct fs_objects objeto;
+    if(!verificaNomeTabela(query->tabela)){
+        printf("\nERROR: relation \"%s\" was not found.\n\n\n", query->tabela);
+        return NULL;
+    }
+    objeto = leObjeto(query->tabela);
+    esquema = leSchema(objeto);
+    if(esquema == ERRO_ABRIR_ESQUEMA){
+        printf("ERROR: schema cannot be created.\n");
+        free(esquema);
+        return NULL;
+    }
+    bufferpoll = initbuffer();
+    if(bufferpoll == ERRO_DE_ALOCACAO){
+        free(bufferpoll);
+        free(esquema);
+        printf("ERROR: no memory available to allocate buffer.\n");
+        return NULL;
+    }
+
+    int tuplaCount = 0, erro; //TODO: Renomear tuplaCount PARA PAGECOUNT
+    do {
+        erro = colocaTuplaBuffer(bufferpoll, tuplaCount, esquema, objeto);
+        tuplaCount++;
+    } while(erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS);
+    tuplaCount--; // ajusta para o número correto de páginas lidas
+
+    int *indiceProj = NULL, qtdCamposProj = 0;
+    if(tipo == 's') {
+        indiceProj = (int *)malloc(sizeof(int) * query->proj->tam);
+        if(!validaProj(query->proj, esquema, objeto.qtdCampos, indiceProj)){
+            free(bufferpoll);
+            free(esquema);
+            free(indiceProj);
+            return NULL;
+        }
+        qtdCamposProj =  ((char *)query->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : query->proj->tam;
+    }
+
+    tupla *pagina = getPage(bufferpoll, esquema, objeto, 0);
+    if(!pagina){
+        printf("Tabela vazia.\n");
+        free(bufferpoll);
+        free(esquema);
+        return NULL;
+    }
+    if(!validaColsWhere(query->tok, esquema, objeto.qtdCampos)){
+        free(indiceProj);
+        free(bufferpoll);
+        free(esquema);
+        return NULL;
+    }
+    int k;
+    char abortar = 0;
+    Lista *resultado = novaLista(NULL);
+    for(int p = 0; !abortar && bufferpoll[p].nrec; p++) {
+        pagina = getPage(bufferpoll, esquema, objeto, p);
+        if(pagina == ERRO_PARAMETRO){
+            printf("ERROR: could not open the table.\n");
+            free(indiceProj);
+            free(bufferpoll);
+            free(esquema);
+            return NULL;
+        }
+        for(k = 0; !abortar && k < bufferpoll[p].nrec; k++){
+            tupla *tuplaData = &pagina[k]; //TODO: renomear TuplaData
+            char satisfies = 0;
+
+            if(query->tok){
+                Lista *l = resArit(query->tok, tuplaData);
+                if(l) {
+                    Lista *l2 = relacoes(l);
+                    satisfies = logPosfixa(l2);
+                }
+                else abortar = 1;
+            }
+            else satisfies = 1;
+            if(!abortar && satisfies) {
+                tupla *t = (tupla*)malloc(sizeof(tupla));
+                memcpy(t, tuplaData, sizeof(tupla));
+                (tipo == 's') ? adcResultado(resultado, tuplaData, indiceProj, qtdCamposProj) : adcNodo(resultado, resultado->ult, t);
+            }
+        }
+        free(pagina);
+    }
+    if(abortar) resultado = NULL;
+    
+    free(indiceProj);
+    free(esquema);
+    free(bufferpoll);
+    return resultado;
 }
 
 /* ----------------------------------------------------------------------------------------------

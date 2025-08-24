@@ -40,7 +40,9 @@ Lista *op_select(inf_query *);
     Parametros: Nome da tabela (char).
     Retorno:    Número de tuplas deletadas.
    ---------------------------------------------------------------------------------------------*/
-void op_delete(inf_query *);
+void op_delete(Lista *toDeleteTuples, char *tabelaName);
+
+Lista *valeriaVaiPensarNissoDepois(inf_query *select, char tipo);
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Função para exclusão de tabelas.
     Parametros: Nome da tabela (char).
