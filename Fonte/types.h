@@ -15,12 +15,11 @@ struct fs_objects { // Estrutura usada para carregar fs_objects.dat
 };
 
 typedef struct tp_table{ // Estrutura usada para carregar fs_schema.dat
-    ushort id;                       // Código da tabela.                   2bytes
+    int id;                       // Código da tabela.                   2bytes
     char nome[TAMANHO_NOME_CAMPO];  // Nome do Campo.                    40bytes
     char tipo;                      // Tipo do Campo.                     1bytes
     int tam;                        // Tamanho do Campo.                  4bytes
     int chave;                      // Tipo da chave                      4bytes
-    ushort idApt;                     // Código da tabela Apontada.         2bytes
     char tabelaApt[TAMANHO_NOME_TABELA]; //Nome da Tabela Apontada        20bytes
     char attApt[TAMANHO_NOME_CAMPO];    //Nome do Atributo Apontado       40bytes
     struct tp_table *next;          // Encadeamento para o próximo campo.

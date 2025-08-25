@@ -195,9 +195,12 @@ char retornaTamanhoTipoDoCampo(char *nomeCampo, table  *tab) {
 
 tp_table *procuraAtributoFK(struct fs_objects objeto){
     FILE *schema;
-    int cod = 0, i = 0;
-    char *tupla = (char *)malloc(sizeof(char) * 111);
+    int cod = 0, chave, i = 0;
+    char *tupla = (char *)malloc(sizeof(char) * 109);
     tp_table *esquema = (tp_table *)malloc(sizeof(tp_table)*objeto.qtdCampos);
+    tp_table *vetEsqm = (tp_table *)malloc(sizeof(tp_table)*objeto.qtdCampos);
+    memset(vetEsqm, 0, sizeof(tp_table)*objeto.qtdCampos);
+    memset(esquema, 0, sizeof(tp_table)*objeto.qtdCampos);
 
     char directory[LEN_DB_NAME_IO];
     strcpy(directory, connected.db_directory);
@@ -207,6 +210,7 @@ tp_table *procuraAtributoFK(struct fs_objects objeto){
       printf("ERROR: could not read schema.\n");
       free(tupla);
 		  free(esquema);
+		  free(vetEsqm);
       return ERRO_ABRIR_ESQUEMA;
     }
 
@@ -220,32 +224,40 @@ tp_table *procuraAtributoFK(struct fs_objects objeto){
 
                 fread(&esquema[i].tipo , sizeof(char), 1 , schema);
                 fread(&esquema[i].tam  , sizeof(int) , 1 , schema);
-                fread(&esquema[i].chave, sizeof(int) , 1 , schema);
-                fread(&esquema[i].idApt, sizeof(ushort), 1, schema);
+                fread(&chave, sizeof(int) , 1 , schema);
+                vetEsqm[i].tipo = esquema[i].tipo;
+                vetEsqm[i].tam = esquema[i].tam;
                 fread(tupla, sizeof(char), TAMANHO_NOME_TABELA, schema);
                 strcpylower(esquema[i].tabelaApt,tupla);
 
                 fread(tupla, sizeof(char), TAMANHO_NOME_CAMPO, schema);
                 strcpylower(esquema[i].attApt,tupla);
 
+                strcpylower(vetEsqm[i].tabelaApt, esquema[i].tabelaApt);
+                strcpylower(vetEsqm[i].attApt, esquema[i].attApt);
+                strcpylower(vetEsqm[i].nome, esquema[i].nome);
+                vetEsqm[i].chave = chave;
+
                 i++;
             } else {
-                fseek(schema, 111, 1);
+                fseek(schema, 109, 1);
             }
         }
     }
     free(tupla);
+	free(esquema);
+
 	fclose(schema);
 
-    return esquema;
+    return vetEsqm;
 }
 
-struct fs_objects leObjeto(intptr_t nTabela, char identifyByName){
+
+struct fs_objects leObjetoById(int idTabela){
     FILE *dicionario;
-    struct fs_objects objeto;
     char *tupla = (char *)malloc(sizeof(char)*TAMANHO_NOME_TABELA);
     memset(tupla, '\0', TAMANHO_NOME_TABELA);
-    int cod, i = 0;
+    int cod, qtdCampos, qtdIndice;
 
     char directory[LEN_DB_NAME_IO];
     strcpy(directory, connected.db_directory);
@@ -253,8 +265,61 @@ struct fs_objects leObjeto(intptr_t nTabela, char identifyByName){
 
     dicionario = fopen(directory, "a+b"); // Abre o dicionario de dados.
 
-    if(identifyByName == 1 && !verificaNomeTabela((char *)nTabela)){
-        printf("ERROR: relation \"%s\" was not found.\n", (char *)nTabela);
+    struct fs_objects objeto;
+
+    if (dicionario == NULL) {
+        printf("ERROR: data dictionary was not found.\n\n");
+        free(tupla);
+        return objeto;
+    }
+
+
+    while(fgetc (dicionario) != EOF){
+        fseek(dicionario, -1, 1);
+
+        fread(tupla, sizeof(char), TAMANHO_NOME_TABELA , dicionario); //Lê somente o nome da tabela
+        strcpylower(objeto.nome, tupla);
+
+        fread(&cod,sizeof(int),1,dicionario);   // Copia valores referentes a tabela pesquisada para a estrutura.
+        fread(tupla,sizeof(char),TAMANHO_NOME_TABELA,dicionario);
+        fread(&qtdCampos,sizeof(int),1,dicionario);
+      	fread(&qtdIndice,sizeof(int),1,dicionario);
+
+        if(cod == idTabela){ // Verifica se o nome dado pelo usuario existe no dicionario de dados.
+            strcpylower(objeto.nArquivo, tupla);
+            objeto.cod=cod;
+            objeto.qtdCampos = qtdCampos;
+      		objeto.qtdIndice = qtdIndice;
+
+            free(tupla);
+            fclose(dicionario);
+            return objeto;
+        }
+    }
+    free(tupla);
+    fclose(dicionario);
+
+    return objeto;
+}
+
+struct fs_objects leObjeto(char *nomeTabela) {
+
+    FILE *dicionario;
+    char *tupla = (char *)malloc(sizeof(char)*TAMANHO_NOME_TABELA);
+    memset(tupla, '\0', TAMANHO_NOME_TABELA);
+    int cod;
+    int i = 0;
+
+    char directory[LEN_DB_NAME_IO];
+    strcpy(directory, connected.db_directory);
+    strcat(directory, "fs_object.dat");
+
+    dicionario = fopen(directory, "a+b"); // Abre o dicionario de dados.
+
+    struct fs_objects objeto;
+
+    if(!verificaNomeTabela(nomeTabela)){
+        printf("ERROR: relation \"%s\" was not found.\n", nomeTabela);
         if (dicionario)
             fclose(dicionario);
         free(tupla);
@@ -268,15 +333,15 @@ struct fs_objects leObjeto(intptr_t nTabela, char identifyByName){
         return objeto;
     }
 
+
     while(fgetc (dicionario) != EOF){
         fseek(dicionario, -1, 1);
 
         fread(tupla, sizeof(char), TAMANHO_NOME_TABELA , dicionario); //Lê somente o nome da tabela
-        fread(&cod,sizeof(int),1,dicionario);   // Copia valores referentes a tabela pesquisada para a estrutura.
 
-        int result = (identifyByName == 1) ? !objcmp(tupla, (char *)nTabela) : nTabela == cod;
-        if(result){ // Verifica se o nome dado pelo usuario existe no dicionario de dados.
+        if(objcmp(tupla, nomeTabela) == 0){ // Verifica se o nome dado pelo usuario existe no dicionario de dados.
             strcpylower(objeto.nome, tupla);
+            fread(&cod,sizeof(int),1,dicionario);   // Copia valores referentes a tabela pesquisada para a estrutura.
             objeto.cod=cod;
             fread(tupla,sizeof(char),TAMANHO_NOME_TABELA,dicionario);
             strcpylower(objeto.nArquivo, tupla);
@@ -296,6 +361,7 @@ struct fs_objects leObjeto(intptr_t nTabela, char identifyByName){
 
     return objeto;
 }
+
 //
 // LEITURA DE DICIONARIO E ESQUEMA
 tp_table *leSchema (struct fs_objects objeto){
@@ -337,11 +403,11 @@ tp_table *leSchema (struct fs_objects objeto){
             if(cod == objeto.cod){ // Verifica se o campo a ser copiado e da tabela que esta na estrutura fs_objects.
                 fread(tupla, sizeof(char), TAMANHO_NOME_CAMPO, schema);
                 strcpylower(esquema[i].nome,tupla);                  // Copia dados do campo para o esquema.
-                esquema[i].id = cod;
+
                 fread(&esquema[i].tipo, sizeof(char),1,schema);
                 fread(&esquema[i].tam, sizeof(int),1,schema);
                 fread(&esquema[i].chave, sizeof(int),1,schema);
-                fread(&esquema[i].idApt, sizeof(ushort), 1, schema);
+
                 fread(tuplaT, sizeof(char), TAMANHO_NOME_TABELA, schema);
                 strcpylower(esquema[i].tabelaApt,tuplaT);
 
@@ -352,7 +418,7 @@ tp_table *leSchema (struct fs_objects objeto){
                 i++;
             }
             else {
-                fseek(schema, 111, 1); // Pula a quantidade de caracteres para a proxima verificacao (40B do nome, 1B do tipo e 4B do tamanho,4B da chave, 20B do nome da Tabela Apontada e 40B do atributo apontado).
+                fseek(schema, 109, 1); // Pula a quantidade de caracteres para a proxima verificacao (40B do nome, 1B do tipo e 4B do tamanho,4B da chave, 20B do nome da Tabela Apontada e 40B do atributo apontado).
             }
         }
     }
@@ -466,7 +532,7 @@ tp_table* verificaIntegridade(char *nTabela){
     tp_table esquema, *fkColumns = NULL; // Aloca esquema com a quantidade de campos necessarios.
     char directory[LEN_DB_NAME_IO];
     strcpy(directory, connected.db_directory);
-    strcat(directory, "fs_object.dat");
+    strcat(directory, "fs_schema.dat");
 
     if((fp = fopen(directory,"r")) == NULL) {
         return (tp_table *)ERRO_ABRIR_ARQUIVO; // TODO: GOMES VAI RESOLVER
@@ -480,11 +546,10 @@ tp_table* verificaIntegridade(char *nTabela){
         fread(&esquema.tipo  , sizeof(char) , 1 , fp);
         fread(&esquema.tam, sizeof(int) , 1 , fp);
         fread(&esquema.chave, sizeof(int), 1, fp);
-        fread(&esquema.idApt, sizeof(ushort), 1, fp);
         fread(&esquema.tabelaApt, TAMANHO_NOME_TABELA, 1, fp);
         fread(&esquema.attApt, TAMANHO_NOME_CAMPO, 1, fp);
         printf(" \n%lu ", ftell(fp));
-        if(strncmp(nTabela, esquema.tabelaApt, 40) && esquema.chave == FK){
+        if(!strncmp(nTabela, esquema.tabelaApt, 20) && esquema.chave == FK){
             tp_table *e = (tp_table *)malloc(sizeof(tp_table));
             memcpy(e, &esquema, sizeof(tp_table));
             e->next = fkColumns;
@@ -496,7 +561,7 @@ tp_table* verificaIntegridade(char *nTabela){
 }
 
 nodo *buildBplusForPK(tp_table *filho) { //TODO: RENOMEAR FUNÇÃO
-    struct fs_objects tabela = leObjeto((intptr_t)filho->id, 0);
+    struct fs_objects tabela = leObjetoById(filho->id);
     char *pkFileName = (char *)malloc(TAMANHO_NOME_INDICE);
     pkFileName = strcat(tabela.nome, filho->nome);
     return constroi_bplus(pkFileName);
@@ -516,34 +581,33 @@ table *iniciaTabela(char *nome){
 }
 ////
 ////
-table *adicionaCampo(table *t,char *nomeCampo, char tipoCampo, int tamanhoCampo, int tChave, char *tabelaApt, char *attApt, ushort codFK){
+table *adicionaCampo(table *t,char *nomeCampo, char tipoCampo, int tamanhoCampo, int tChave, char *tabelaApt, char *attApt){
     tp_table *e = NULL;
-    // Se a estrutura passada for nula, retorna erro.
+     // Se a estrutura passada for nula, retorna erro.
     if(t == NULL) return ERRO_ESTRUTURA_TABELA_NULA;
     tp_table *aux;
     if(t->esquema == NULL){ // Se o campo for o primeiro a ser adicionado, adiciona campo no esquema.
-        e = (tp_table *)malloc(sizeof(tp_table));
-        memset(e, 0, sizeof(tp_table));
-        if (e == NULL) return ERRO_DE_ALOCACAO;
-        
-        e->idApt = codFK;
-        e->next = NULL;
-        int n = strlen(nomeCampo)+1;
-        if (n > TAMANHO_NOME_CAMPO) n = TAMANHO_NOME_CAMPO;
+      e = (tp_table *)malloc(sizeof(tp_table));
+      memset(e, 0, sizeof(tp_table));
+      if (e == NULL) return ERRO_DE_ALOCACAO;
 
-        strncpylower(e->nome, nomeCampo,n); // Copia nome do campo passado para o esquema
-        e->tipo = tipoCampo; // Copia tipo do campo passado para o esquema
-        e->tam = tamanhoCampo; // Copia tamanho do campo passado para o esquema
-        e->chave = tChave; // Copia tipo de chave passado para o esquema
+      e->next = NULL;
+      int n = strlen(nomeCampo)+1;
+      if (n > TAMANHO_NOME_CAMPO) n = TAMANHO_NOME_CAMPO;
 
-        if(strlen(tabelaApt) >= 1)
-            strcpylower(e->tabelaApt, tabelaApt); //Copia a Tabela Refenciada da FK de chave passado para o esquema;
+      strncpylower(e->nome, nomeCampo,n); // Copia nome do campo passado para o esquema
+      e->tipo = tipoCampo; // Copia tipo do campo passado para o esquema
+      e->tam = tamanhoCampo; // Copia tamanho do campo passado para o esquema
+      e->chave = tChave; // Copia tipo de chave passado para o esquema
 
-        if(strlen(attApt) >= 1)
-            strcpylower(e->attApt, attApt); //Copia o Atributo Refenciado da FK de chave passado para o esquema
+      if(strlen(tabelaApt) >= 1)
+          strcpylower(e->tabelaApt, tabelaApt); //Copia a Tabela Refenciada da FK de chave passado para o esquema;
 
-        t->esquema = e;
-        return t; // Retorna a estrutura
+      if(strlen(attApt) >= 1)
+          strcpylower(e->attApt, attApt); //Copia o Atributo Refenciado da FK de chave passado para o esquema
+
+      t->esquema = e;
+      return t; // Retorna a estrutura
     }
     else {
         for(aux = t->esquema; aux != NULL; aux = aux->next){ // Anda até o final da estrutura de campos.
@@ -551,7 +615,6 @@ table *adicionaCampo(table *t,char *nomeCampo, char tipoCampo, int tamanhoCampo,
                 e = (tp_table *)malloc(sizeof(tp_table));
                 memset(e, 0, sizeof(*e));
                 if (e == NULL) return ERRO_DE_ALOCACAO;
-                e->idApt = codFK;
                 e->next = NULL;
                 int n = strlen(nomeCampo)+1;
                 if (n > TAMANHO_NOME_CAMPO) n = TAMANHO_NOME_CAMPO;
@@ -594,14 +657,13 @@ int finalizaTabela(table *t){
 
     for(aux = t->esquema; aux != NULL; aux = aux->next){ // Salva novos campos no esquema da tabela, fs_schema.dat
 
-        fwrite(&codTbl         ,sizeof(int)         ,1,esquema);  //Código Tabela
-        fwrite(&aux->nome      ,sizeof(40)          ,1,esquema);  //Nome campo
-        fwrite(&aux->tipo      ,sizeof(char)        ,1,esquema);  //Tipo campo
-        fwrite(&aux->tam       ,sizeof(int)         ,1,esquema);  //Tamanho campo
-        fwrite(&aux->chave     ,sizeof(int)         ,1,esquema);  //Chave do campo
-        fwrite(&aux->idApt     ,sizeof(ushort)      ,1,esquema);  //Tabela Apontada
-        fwrite(&aux->tabelaApt ,sizeof(20)          ,1,esquema);  //Tabela Apontada
-        fwrite(&aux->attApt    ,sizeof(40)          ,1,esquema);  //Atributo apontado.
+        fwrite(&codTbl         ,sizeof(codTbl)         ,1,esquema);  //Código Tabela
+        fwrite(&aux->nome      ,sizeof(aux->nome)      ,1,esquema);  //Nome campo
+        fwrite(&aux->tipo      ,sizeof(aux->tipo)      ,1,esquema);  //Tipo campo
+        fwrite(&aux->tam       ,sizeof(aux->tam)       ,1,esquema);  //Tamanho campo
+        fwrite(&aux->chave     ,sizeof(aux->chave)     ,1,esquema);  //Chave do campo
+        fwrite(&aux->tabelaApt ,sizeof(aux->tabelaApt) ,1,esquema);  //Tabela Apontada
+        fwrite(&aux->attApt    ,sizeof(aux->attApt)    ,1,esquema);  //Atributo apontado.
 
     		if(aux->chave == PK && !qtdIndice) {
     			qtdIndice++;
@@ -627,9 +689,6 @@ int finalizaTabela(table *t){
     fwrite(&nomeArquivo,sizeof(nomeArquivo),1,dicionario);
     fwrite(&qtdCampos,sizeof(qtdCampos),1,dicionario);
     fwrite(&qtdIndice,sizeof(int),1,dicionario);
-
-    strcpy(directory, connected.db_directory);
-    strcat(directory, "fs_constraint.dat");
 
     fclose(dicionario);
     return SUCCESS;
@@ -880,7 +939,7 @@ void adicionaBT(char *nomeTabela, char *nomeAtrib) {
       printf("Erro ao abrir esquema da tabela.\n");
       return;
   }
-  struct fs_objects objeto = leObjeto((intptr_t)nomeTabela, 1);
+  struct fs_objects objeto = leObjeto(nomeTabela);
 
   while(fgetc (schema) != EOF){ // Varre o arquivo ate encontrar todos os campos com o codigo da tabela.
       fseek(schema, -1, 1);

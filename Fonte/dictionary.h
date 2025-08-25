@@ -33,7 +33,8 @@ int procuraObjectArquivo(char *);
 
     *nTabela - Nome da tabela a ser buscado no dicionário de dados
 */
-struct fs_objects leObjeto(intptr_t nomeTabela, int identifyByName);
+struct fs_objects leObjeto(char *nomeTabela);
+struct fs_objects leObjetoById(int idTabela);
 /*
     Esta função busca, no arquivo fs_schema.dat, pelas informações do objeto, carregando o esquema
     da tabela que é retornadado em tp_table.

@@ -35,7 +35,7 @@
     Retorno:    tp_table
    ---------------------------------------------------------------------------------------------*/
 tp_table *abreTabela(char *nomeTabela, struct fs_objects *objeto, tp_table **tabela) {
-    *objeto     = leObjeto((intptr_t)nomeTabela, 1);
+    *objeto     = leObjeto(nomeTabela);
     *tabela     = leSchema(*objeto);
 
     return *tabela;
@@ -92,7 +92,7 @@ char *getInsertedValue(rc_insert *s_insert, char *columnName, table *tabela) {
    ---------------------------------------------------------------------------------------------*/
 
 int iniciaAtributos(struct fs_objects *objeto, tp_table **tabela, tp_buffer **bufferpool, char *nomeT){
-    *objeto     = leObjeto((intptr_t)nomeT, 1);
+    *objeto     = leObjeto(nomeT);
     *tabela     = leSchema(*objeto);
     *bufferpool = initbuffer();
     if(*tabela == ERRO_ABRIR_ESQUEMA) return ERRO_DE_PARAMETRO;
@@ -103,7 +103,7 @@ int iniciaAtributos(struct fs_objects *objeto, tp_table **tabela, tp_buffer **bu
 int verifyFK(char *tableName, char *column){
   int r = 0;
   if(verificaNomeTabela(tableName) == 1){
-    struct fs_objects objeto = leObjeto((intptr_t)tableName, 1);
+    struct fs_objects objeto = leObjeto(tableName);
     tp_table *esquema = leSchema(objeto),*k;
     if(esquema == ERRO_ABRIR_ESQUEMA){
       printf("ERROR: cannot create schema.\n");
@@ -792,7 +792,7 @@ void adcResultado(Lista *resultado, tupla *tuple, int *indiceProj, int qtdColuna
    ---------------------------------------------------------------------------------------------*/
 void op_delete(Lista *toDeleteTuples, char *tabelaName) {
     tp_table *esquema;
-    struct fs_objects objeto = leObjeto((intptr_t)tabelaName, 1);
+    struct fs_objects objeto = leObjeto(tabelaName);
     esquema = leSchema(objeto);
     tp_buffer *bufferpoll = initbuffer();
     int countDeletedTuples = 0;
@@ -854,7 +854,7 @@ Lista *handleTableOperation(inf_query *query, char tipo) {
         printf("\nERROR: relation \"%s\" was not found.\n\n\n", query->tabela);
         return NULL;
     }
-    objeto = leObjeto((intptr_t)query->tabela, 1);
+    objeto = leObjeto(query->tabela);
     esquema = leSchema(objeto);
     if(esquema == ERRO_ABRIR_ESQUEMA){
         printf("ERROR: schema cannot be created.\n");
@@ -1266,7 +1266,7 @@ void createIndex(rc_insert *t) {
     return;
   }
 
-  obj = leObjeto((intptr_t)t->objName, 1);
+  obj = leObjeto(t->objName);
   tb  = leSchema(obj);
 
   for(tp_table *aux = tb; aux != NULL && !flag; aux = aux->next) {
