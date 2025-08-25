@@ -309,15 +309,15 @@ int interface() {
                                 printf("WARNING: Nothing to be inserted. Command ignored.\n");
                             break;
                         case OP_SELECT:
-                            resultado = valeriaVaiPensarNissoDepois(&QUERY, 's');
+                            resultado = handleTableOperation(&QUERY, 's');
                             if (resultado) {
                                 printConsulta(QUERY.proj, resultado);
                                 resultado = NULL;
                             }
                             break;
                         case OP_DELETE:
-                            resultado = valeriaVaiPensarNissoDepois(&QUERY, 'd');
-                            if (resultado) {
+                            resultado = handleTableOperation(&QUERY, 'd');
+                            if (resultado && afterTrigger(resultado, &QUERY)) {
                                 op_delete(resultado, QUERY.tabela);
                                 resultado = NULL;
                             }

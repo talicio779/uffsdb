@@ -830,23 +830,23 @@ void op_delete(Lista *toDeleteTuples, char *tabelaName) {
 int afterTrigger(Lista *resultado, inf_query *query) {
     tp_table *fkColumns = verificaIntegridade(query->tabela);
     for(tp_table *temp = fkColumns; temp; temp = temp->next) {
-        nodo *bplusRoot = verificaPai(temp);
+        nodo *bplusRoot = buildBplusForPK(temp);
         for(Nodo *aux; aux; aux = aux->prox) {
             tupla *t = aux->inf;
             for(column *col = t->column; col; col = col->next){
                 if(!strncmp(col->nomeCampo, temp->nome, TAMANHO_NOME_CAMPO)){
                     if(buscaChaveBtree(bplusRoot, col->valorCampo)){
                         printf("\nERROR: tuple with primary key '%s' is referenced by table '%s' via foreign key '%s'", col->nomeCampo, temp->tabelaApt, temp->nome);
-                        return 1;
+                        return 0;
                     }
                 }
             }
         }
     }
-    return 0;
+    return 1;
 }
 
-Lista *valeriaVaiPensarNissoDepois(inf_query *query, char tipo) { //TODO: Renomear função
+Lista *handleTableOperation(inf_query *query, char tipo) {
     tp_table *esquema;
     tp_buffer *bufferpoll;
     struct fs_objects objeto;
@@ -869,12 +869,12 @@ Lista *valeriaVaiPensarNissoDepois(inf_query *query, char tipo) { //TODO: Renome
         return NULL;
     }
 
-    int tuplaCount = 0, erro; //TODO: Renomear tuplaCount PARA PAGECOUNT
+    int pageCount = 0, erro;
     do {
-        erro = colocaTuplaBuffer(bufferpoll, tuplaCount, esquema, objeto);
-        tuplaCount++;
+        erro = colocaTuplaBuffer(bufferpoll, pageCount, esquema, objeto);
+        pageCount++;
     } while(erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS);
-    tuplaCount--; // ajusta para o número correto de páginas lidas
+    pageCount--; // ajusta para o número correto de páginas lidas
 
     int *indiceProj = NULL, qtdCamposProj = 0;
     if(tipo == 's') {
@@ -914,11 +914,11 @@ Lista *valeriaVaiPensarNissoDepois(inf_query *query, char tipo) { //TODO: Renome
             return NULL;
         }
         for(k = 0; !abortar && k < bufferpoll[p].nrec; k++){
-            tupla *tuplaData = &pagina[k]; //TODO: renomear TuplaData
+            tupla *currentTuple = &pagina[k];
             char satisfies = 0;
 
             if(query->tok){
-                Lista *l = resArit(query->tok, tuplaData);
+                Lista *l = resArit(query->tok, currentTuple);
                 if(l) {
                     Lista *l2 = relacoes(l);
                     satisfies = logPosfixa(l2);
@@ -928,8 +928,8 @@ Lista *valeriaVaiPensarNissoDepois(inf_query *query, char tipo) { //TODO: Renome
             else satisfies = 1;
             if(!abortar && satisfies) {
                 tupla *t = (tupla*)malloc(sizeof(tupla));
-                memcpy(t, tuplaData, sizeof(tupla));
-                (tipo == 's') ? adcResultado(resultado, tuplaData, indiceProj, qtdCamposProj) : adcNodo(resultado, resultado->ult, t);
+                memcpy(t, currentTuple, sizeof(tupla));
+                (tipo == 's') ? adcResultado(resultado, currentTuple, indiceProj, qtdCamposProj) : adcNodo(resultado, resultado->ult, t);
             }
         }
         free(pagina);
@@ -1185,6 +1185,7 @@ void createTable(rc_insert *t) {
   strcpylower(t->objName, t->objName);        //muda pra minúsculo
   char *tableName = (char*) malloc(sizeof(char)*(TAMANHO_NOME_TABELA+10)),
                     fkTable[TAMANHO_NOME_TABELA], fkColumn[TAMANHO_NOME_CAMPO];
+    ushort codFK;
 
   strncpylower(tableName, t->objName, TAMANHO_NOME_TABELA);
   strcat(tableName, ".dat\0");                  //tableName.dat
@@ -1213,13 +1214,14 @@ void createTable(rc_insert *t) {
   		size = sizeof(char);
   	if(t->attribute[i] == FK){
   		strncpylower(fkTable, t->fkTable[i], TAMANHO_NOME_TABELA);
+        codFK = 1;
   		strncpylower(fkColumn,t->fkColumn[i], TAMANHO_NOME_CAMPO);
   	}
     else{
   		strcpy(fkTable, "");
   		strcpy(fkColumn, "");
   	}
-    tab = adicionaCampo(tab, t->columnName[i], t->type[i], size, t->attribute[i], fkTable, fkColumn);
+    tab = adicionaCampo(tab, t->columnName[i], t->type[i], size, t->attribute[i], fkTable, fkColumn, codFK);
     if((objcmp(fkTable, "") != 0) || (objcmp(fkColumn, "") != 0)){
       if(verifyFK(fkTable, fkColumn) == 0){
   		  printf("ERROR: attribute FK cannot be referenced\n");

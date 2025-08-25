@@ -33,7 +33,7 @@ int procuraObjectArquivo(char *);
 
     *nTabela - Nome da tabela a ser buscado no dicionário de dados
 */
-struct fs_objects leObjeto(intptr_t nomeTabela, int flag);
+struct fs_objects leObjeto(intptr_t nomeTabela, int identifyByName);
 /*
     Esta função busca, no arquivo fs_schema.dat, pelas informações do objeto, carregando o esquema
     da tabela que é retornadado em tp_table.
@@ -76,7 +76,7 @@ int quantidadeTabelas();
 */
 int verificaNomeTabela(char *);
 tp_table* verificaIntegridade(char *nTabela);
-nodo *verificaPai(tp_table *filho);
+nodo *buildBplusForPK(tp_table *filho);
 /*
     Esta função inicia um estrutura do tipo table, como nome de tabela passado.
     Retorna:
@@ -94,7 +94,7 @@ table *iniciaTabela(char *);
     tipoCampo - Tipo do campo que irá ser inserido na lista de campos.
     tamanhoCampo - Tamanho do campo que irá ser inserido na lista de campos.
 */
-table *adicionaCampo(table *,char *, char , int , int , char *, char *);
+table *adicionaCampo(table *,char *, char , int , int , char *, char *, ushort codFK);
 /*
     Esta função finaliza a tabela preveamente estrutura pelas funcoes iniciaTabela() e adicionaCampo().
     Escreve nos arquivos fs_object.dat e fs_schema.dat, a estrutura passada.
