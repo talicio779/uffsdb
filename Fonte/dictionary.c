@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
+#ifndef FBTREE // includes only if this flag is not defined (preventing duplication)
+   #include "btree.h"
+#endif
 
 #ifndef FMACROS // garante que macros.h não seja reincluída
    #include "macros.h"
@@ -236,13 +240,12 @@ tp_table *procuraAtributoFK(struct fs_objects objeto){
     return esquema;
 }
 
-struct fs_objects leObjeto(char *nTabela){
-
+struct fs_objects leObjeto(intptr_t nTabela, char flag){ // TODO: RENOMEAR FLAG
     FILE *dicionario;
+    struct fs_objects objeto;
     char *tupla = (char *)malloc(sizeof(char)*TAMANHO_NOME_TABELA);
     memset(tupla, '\0', TAMANHO_NOME_TABELA);
-    int cod;
-    int i = 0;
+    int cod, i = 0;
 
     char directory[LEN_DB_NAME_IO];
     strcpy(directory, connected.db_directory);
@@ -250,10 +253,8 @@ struct fs_objects leObjeto(char *nTabela){
 
     dicionario = fopen(directory, "a+b"); // Abre o dicionario de dados.
 
-    struct fs_objects objeto;
-
-    if(!verificaNomeTabela(nTabela)){
-        printf("ERROR: relation \"%s\" was not found.\n", nTabela);
+    if(flag == 1 && !verificaNomeTabela((char *)nTabela)){
+        printf("ERROR: relation \"%s\" was not found.\n", (char *)nTabela);
         if (dicionario)
             fclose(dicionario);
         free(tupla);
@@ -267,15 +268,15 @@ struct fs_objects leObjeto(char *nTabela){
         return objeto;
     }
 
-
     while(fgetc (dicionario) != EOF){
         fseek(dicionario, -1, 1);
 
         fread(tupla, sizeof(char), TAMANHO_NOME_TABELA , dicionario); //Lê somente o nome da tabela
+        fread(&cod,sizeof(int),1,dicionario);   // Copia valores referentes a tabela pesquisada para a estrutura.
 
-        if(objcmp(tupla, nTabela) == 0){ // Verifica se o nome dado pelo usuario existe no dicionario de dados.
+        int result = (flag == 1) ? !objcmp(tupla, (char *)nTabela) : nTabela == cod;
+        if(result){ // Verifica se o nome dado pelo usuario existe no dicionario de dados.
             strcpylower(objeto.nome, tupla);
-            fread(&cod,sizeof(int),1,dicionario);   // Copia valores referentes a tabela pesquisada para a estrutura.
             objeto.cod=cod;
             fread(tupla,sizeof(char),TAMANHO_NOME_TABELA,dicionario);
             strcpylower(objeto.nArquivo, tupla);
@@ -460,16 +461,15 @@ int tamTuplaSemByteControle(tp_table *esquema, struct fs_objects objeto) {// Ret
     return tamanhoGeral;
 }
 
-tp_table* verificaIntegridade(ushort idTabela ){
+tp_table* verificaIntegridade(char *nTabela){
     FILE *fp;
     tp_table esquema, *fkColumns = NULL; // Aloca esquema com a quantidade de campos necessarios.
-    int cod;
     char directory[LEN_DB_NAME_IO];
     strcpy(directory, connected.db_directory);
     strcat(directory, "fs_object.dat");
 
     if((fp = fopen(directory,"a+b")) == NULL) {
-        return ERRO_ABRIR_ARQUIVO;
+        return (tp_table *)ERRO_ABRIR_ARQUIVO; // TODO: GOMES VAI RESOLVER
     }
 
      while((fgetc (fp) != EOF)){
@@ -483,7 +483,7 @@ tp_table* verificaIntegridade(ushort idTabela ){
         fread(&esquema.idApt, sizeof(ushort), 1, fp);
         fread(&esquema.tabelaApt, TAMANHO_NOME_TABELA, 1, fp);
         fread(&esquema.attApt, TAMANHO_NOME_CAMPO, 1, fp);
-        if(idTabela == esquema.idApt && esquema.chave == FK){
+        if(strncmp(nTabela, esquema.tabelaApt, 40) && esquema.chave == FK){
             tp_table *e = (tp_table *)malloc(sizeof(tp_table));
             memcpy(e, &esquema, sizeof(tp_table));
             e->next = fkColumns;
@@ -492,6 +492,13 @@ tp_table* verificaIntegridade(ushort idTabela ){
     }
 	fclose(fp);
     return fkColumns;
+}
+
+nodo *verificaPai(tp_table *filho) { //TODO: RENOMEAR FUNÇÃO
+    struct fs_objects tabela = leObjeto((intptr_t)filho->id, 0);
+    char *pkFileName = (char *)malloc(TAMANHO_NOME_INDICE);
+    pkFileName = strcat(tabela.nome, filho->nome);
+    return constroi_bplus(pkFileName);
 }
 
 // CRIA TABELA
@@ -870,7 +877,7 @@ void adicionaBT(char *nomeTabela, char *nomeAtrib) {
       printf("Erro ao abrir esquema da tabela.\n");
       return;
   }
-  struct fs_objects objeto = leObjeto(nomeTabela);
+  struct fs_objects objeto = leObjeto((intptr_t)nomeTabela, 1);
 
   while(fgetc (schema) != EOF){ // Varre o arquivo ate encontrar todos os campos com o codigo da tabela.
       fseek(schema, -1, 1);

@@ -35,7 +35,7 @@
     Retorno:    tp_table
    ---------------------------------------------------------------------------------------------*/
 tp_table *abreTabela(char *nomeTabela, struct fs_objects *objeto, tp_table **tabela) {
-    *objeto     = leObjeto(nomeTabela);
+    *objeto     = leObjeto((intptr_t)nomeTabela, 1);
     *tabela     = leSchema(*objeto);
 
     return *tabela;
@@ -92,7 +92,7 @@ char *getInsertedValue(rc_insert *s_insert, char *columnName, table *tabela) {
    ---------------------------------------------------------------------------------------------*/
 
 int iniciaAtributos(struct fs_objects *objeto, tp_table **tabela, tp_buffer **bufferpool, char *nomeT){
-    *objeto     = leObjeto(nomeT);
+    *objeto     = leObjeto((intptr_t)nomeT, 1);
     *tabela     = leSchema(*objeto);
     *bufferpool = initbuffer();
     if(*tabela == ERRO_ABRIR_ESQUEMA) return ERRO_DE_PARAMETRO;
@@ -103,7 +103,7 @@ int iniciaAtributos(struct fs_objects *objeto, tp_table **tabela, tp_buffer **bu
 int verifyFK(char *tableName, char *column){
   int r = 0;
   if(verificaNomeTabela(tableName) == 1){
-    struct fs_objects objeto = leObjeto(tableName);
+    struct fs_objects objeto = leObjeto((intptr_t)tableName, 1);
     tp_table *esquema = leSchema(objeto),*k;
     if(esquema == ERRO_ABRIR_ESQUEMA){
       printf("ERROR: cannot create schema.\n");
@@ -597,11 +597,11 @@ void insert(rc_insert *s_insert) {
 				}
 			}
 		}
-    else {
-      printf("ERROR: INSERT has more expressions than target columns.\n");
-		  flag = 1;
-		}
-	}
+        else {
+        printf("ERROR: INSERT has more expressions than target columns.\n");
+            flag = 1;
+            }
+        }
 
     if (!flag && finalizaInsert(s_insert->objName, colunas, tamTuplaSemByteControle(tabela->esquema, objeto)) == SUCCESS)  printf("INSERT 0 1\n");
 
@@ -785,93 +785,6 @@ void adcResultado(Lista *resultado, tupla *tuple, int *indiceProj, int qtdColuna
     free(listNw);
 }
 
-Lista *op_select(inf_query *select) {
-  //inicio das validações.
-    tp_table *esquema;
-    tp_buffer *bufferpoll;
-    struct fs_objects objeto;
-    if(!verificaNomeTabela(select->tabela)){
-        printf("\nERROR: relation \"%s\" was not found.\n\n\n", select->tabela);
-        return NULL;
-    }
-    objeto = leObjeto(select->tabela);
-    esquema = leSchema(objeto);
-    if(esquema == ERRO_ABRIR_ESQUEMA){
-        printf("ERROR: schema cannot be created.\n");
-        free(esquema);
-        return NULL;
-    }
-    bufferpoll = initbuffer();
-    if(bufferpoll == ERRO_DE_ALOCACAO){
-        free(bufferpoll);
-        free(esquema);
-        printf("ERROR: no memory available to allocate buffer.\n");
-        return NULL;
-    }
-    int tuplaCount = 0, erro = SUCCESS;
-    while (erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS){
-        erro = colocaTuplaBuffer(bufferpoll, tuplaCount, esquema, objeto);
-        tuplaCount++;
-    }
-    tupla *pagina = getPage(bufferpoll, esquema, objeto, 0);
-    if(!pagina){
-        printf("Tabela vazia.\n");
-        free(bufferpoll);
-        free(esquema);
-        return NULL;
-    }
-
-    int *indiceProj = (int *)malloc(sizeof(int) * select->proj->tam);
-    if(!validaProj(select->proj, esquema, objeto.qtdCampos, indiceProj)){
-        free(bufferpoll);
-        free(esquema);
-        free(indiceProj);
-        return NULL;
-    }
-
-    if(!validaColsWhere(select->tok, esquema, objeto.qtdCampos)){
-        free(bufferpoll);
-        free(esquema);
-        free(indiceProj);
-        return NULL;
-    }
-    int k;
-    char abortar = 0;
-    int qtdCamposProj =  ((char *)select->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : select->proj->tam;
-    Lista *resultado = novaLista(NULL);
-    for(int p = 0; !abortar && bufferpoll[p].nrec; p++) {
-        pagina = getPage(bufferpoll, esquema, objeto, p);
-        if(pagina == ERRO_PARAMETRO){
-            printf("ERROR: could not open the table.\n");
-            free(bufferpoll);
-            free(esquema);
-            free(indiceProj);
-            return NULL;
-        }
-        for(k = 0; !abortar && k < bufferpoll[p].nrec; k++){
-            tupla *tupla = &pagina[k];
-            char sat = 0;
-
-            if(select->tok){
-                Lista *l = resArit(select->tok, tupla);
-                if(l) {
-                    Lista *l2 = relacoes(l);
-                    sat = (logPosfixa(l2) != 0);
-                }
-                else abortar = 1;
-            }
-            else sat = 1;
-            if(!abortar && sat) adcResultado(resultado, tupla, indiceProj, qtdCamposProj);
-        }
-        free(pagina);
-    }
-    if(abortar) resultado = NULL;
-    
-    free(indiceProj);
-    free(esquema); esquema = NULL;
-    free(bufferpoll); bufferpoll = NULL;
-    return resultado;
-}
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Utilizada para deletar tuplas.
     Parametros: Nome da tabela (char).
@@ -879,7 +792,7 @@ Lista *op_select(inf_query *select) {
    ---------------------------------------------------------------------------------------------*/
 void op_delete(Lista *toDeleteTuples, char *tabelaName) {
     tp_table *esquema;
-    struct fs_objects objeto = leObjeto(tabelaName);
+    struct fs_objects objeto = leObjeto((intptr_t)tabelaName, 1);
     esquema = leSchema(objeto);
     tp_buffer *bufferpoll = initbuffer();
     int countDeletedTuples = 0;
@@ -914,6 +827,25 @@ void op_delete(Lista *toDeleteTuples, char *tabelaName) {
     free(esquema);
 }
 
+int afterTrigger(Lista *resultado, inf_query *query) {
+    tp_table *fkColumns = verificaIntegridade(query->tabela);
+    for(tp_table *temp = fkColumns; temp; temp = temp->next) {
+        nodo *bplusRoot = verificaPai(temp);
+        for(Nodo *aux; aux; aux = aux->prox) {
+            tupla *t = aux->inf;
+            for(column *col = t->column; col; col = col->next){
+                if(!strncmp(col->nomeCampo, temp->nome, TAMANHO_NOME_CAMPO)){
+                    if(buscaChaveBtree(bplusRoot, col->valorCampo)){
+                        printf("\nERROR: tuple with primary key '%s' is referenced by table '%s' via foreign key '%s'", col->nomeCampo, temp->tabelaApt, temp->nome);
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 Lista *valeriaVaiPensarNissoDepois(inf_query *query, char tipo) { //TODO: Renomear função
     tp_table *esquema;
     tp_buffer *bufferpoll;
@@ -922,7 +854,7 @@ Lista *valeriaVaiPensarNissoDepois(inf_query *query, char tipo) { //TODO: Renome
         printf("\nERROR: relation \"%s\" was not found.\n\n\n", query->tabela);
         return NULL;
     }
-    objeto = leObjeto(query->tabela);
+    objeto = leObjeto((intptr_t)query->tabela, 1);
     esquema = leSchema(objeto);
     if(esquema == ERRO_ABRIR_ESQUEMA){
         printf("ERROR: schema cannot be created.\n");
@@ -1332,7 +1264,7 @@ void createIndex(rc_insert *t) {
     return;
   }
 
-  obj = leObjeto(t->objName);
+  obj = leObjeto((intptr_t)t->objName, 1);
   tb  = leSchema(obj);
 
   for(tp_table *aux = tb; aux != NULL && !flag; aux = aux->next) {

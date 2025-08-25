@@ -1,4 +1,7 @@
 #define FDICTIONARY 1 // para testar se já foi incluída
+#ifndef FBTREE // includes only if this flag is not defined (preventing duplication)
+   #include "btree.h"
+#endif
 
 int existeArquivo(const char* );
 /* ----------------------------------------------------------------------------------------------
@@ -30,12 +33,12 @@ int procuraObjectArquivo(char *);
 
     *nTabela - Nome da tabela a ser buscado no dicionário de dados
 */
-struct fs_objects leObjeto(char *);
+struct fs_objects leObjeto(intptr_t nomeTabela, int flag);
 /*
     Esta função busca, no arquivo fs_schema.dat, pelas informações do objeto, carregando o esquema
     da tabela que é retornadado em tp_table.
     Caso o nome da tabela não exista, o programa aborta
-    *objeto - Objeto, já previamente inicializado em leObjeto(nTabela), que contém as informações
+    *objeto - Objeto, já previamente inicializado em leObjeto(nTabela, flag), que contém as informações
               sobre uma determinada tabela.
 */
 tp_table *leSchema (struct fs_objects );
@@ -72,6 +75,8 @@ int quantidadeTabelas();
     *nomeTabela - Nome de uma tabela,  a qual deseja-se saber se existe no dicionario.
 */
 int verificaNomeTabela(char *);
+tp_table* verificaIntegridade(char *nTabela);
+nodo *verificaPai(tp_table *filho);
 /*
     Esta função inicia um estrutura do tipo table, como nome de tabela passado.
     Retorna:

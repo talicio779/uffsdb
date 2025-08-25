@@ -42,6 +42,8 @@ Lista *op_select(inf_query *);
    ---------------------------------------------------------------------------------------------*/
 void op_delete(Lista *toDeleteTuples, char *tabelaName);
 
+int afterTrigger(Lista *resultado, inf_query *query);
+
 Lista *valeriaVaiPensarNissoDepois(inf_query *select, char tipo);
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Função para exclusão de tabelas.
