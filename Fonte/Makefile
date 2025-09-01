@@ -2,8 +2,11 @@ LDLIBS = -lfl -lm -pthread -lreadline
 
 all: uffsdb
 
+debug: interface/y.tab.c interface/y.tab.h interface/lex.yy.c *.c *.h
+	gcc -DDEBUG *.c interface/*.c -Iinclude $(LDLIBS) -o uffsdb -Wall -g
+
 uffsdb: interface/y.tab.c interface/y.tab.h interface/lex.yy.c *.c *.h
-	gcc *.c interface/*.c -Iinclude -Wall -g $(LDLIBS) -o uffsdb 
+	gcc *.c interface/*.c -Iinclude $(LDLIBS) -o uffsdb -Wall -g
 
 interface/y.tab.c interface/y.tab.h: interface/lex.l interface/yacc.y
 	lex -o interface/lex.yy.c interface/lex.l
@@ -13,3 +16,4 @@ clean:
 	rm uffsdb -f
 	rm data/ -RIf
 	rm interface/y.tab.c interface/y.tab.h interface/lex.yy.c
+

@@ -71,8 +71,7 @@ void createDB(char *db_name) {
 
     if(valid && objcmp(vec_name[i], db_name) == 0) {
     	fclose(DB);
-		  if(objcmp(db_name, "uffsdb") != 0) 			// banco de dados ja existe
-        printf("ERROR: database already exists\n");
+      printf("ERROR: database already exists\n");
       return;
     }
   }
@@ -102,7 +101,7 @@ void createDB(char *db_name) {
 	if(system(create) == -1) {			//verifica se foi possivel criar o diretorio
 		printf("ERROR: It was not possible to create the database\n");
 	}
-  else if(objcmp(db_name, "uffsdb") != 0) printf("CREATE DATABASE\n");
+  else printf("CREATE DATABASE\n");
   free(SGBD);
   fclose(DB);
 }
