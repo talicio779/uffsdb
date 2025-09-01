@@ -62,4 +62,11 @@ void setTupla(tp_buffer *buffer,char *tupla, int tam, int pos);
 ////
 void cria_campo(int , int , char *, int );
 
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para gravar as mudanças do buffer no disco.
+    Parametros: Buffer (tp_buffer), dados da tabela (fs_objects), número de blocos e offset do bloco.
+    Retorno:    1 para sucesso, 0 para falha.
+   ---------------------------------------------------------------------------------------------*/
+int writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects *objeto, int blockNumber, int blockOffset);
+
 void addColumn(column **colList, column *c);

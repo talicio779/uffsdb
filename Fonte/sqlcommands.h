@@ -34,7 +34,17 @@ int finalizaInsert(char *, column *, int tamTupla);
     Parametros: Nome da tabela (char).
     Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
-Lista *op_select(inf_select *);
+Lista *op_select(inf_query *);
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para deletar tuplas.
+    Parametros: Nome da tabela (char).
+    Retorno:    void.
+   ---------------------------------------------------------------------------------------------*/
+void op_delete(Lista *toDeleteTuples, char *tabelaName);
+
+int afterTrigger(Lista *resultado, inf_query *query);
+
+Lista *handleTableOperation(inf_query *select, char tipo);
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Função para exclusão de tabelas.
     Parametros: Nome da tabela (char).

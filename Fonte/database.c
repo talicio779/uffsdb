@@ -65,8 +65,8 @@ void createDB(char *db_name) {
   for(i=0; fgetc (DB) != EOF; i++) {
   	fseek(DB, -1, 1);
 
-  	fread(&valid			,sizeof(char), 			 1, DB);
-    fread(vec_name[i]  		,sizeof(char), LEN_DB_NAME_IO, DB);
+  	fread(&valid			      ,sizeof(char), 			        1, DB);
+    fread(vec_name[i]  		  ,sizeof(char), LEN_DB_NAME_IO, DB);
     fread(vec_directory[i] 	,sizeof(char), LEN_DB_NAME_IO, DB);
 
     if(valid && objcmp(vec_name[i], db_name) == 0) {
@@ -93,7 +93,7 @@ void createDB(char *db_name) {
 	SGBD->db_directory[len+1] 	= '\0';
 	fwrite(SGBD ,sizeof(data_base), 1, DB);
 
-  aux_name_tolower = (char *)malloc(sizeof(char) * (strlen(db_name)+1));
+  aux_name_tolower = (char *)malloc(sizeof(char) * (strlen(db_name)+1)); // porque usar malloc e não um array comum: char aux_name_tolower[strlen(db_name) + 1];
   strcpylower(aux_name_tolower, db_name);
   strcat(create, aux_name_tolower);
   free(aux_name_tolower);
@@ -109,8 +109,8 @@ void createDB(char *db_name) {
 void dropDatabase(char *db_name){
 	FILE *DB;
 	int i;
-	char vec_name[QTD_DB][LEN_DB_NAME_IO],
-        vec_directory[QTD_DB][LEN_DB_NAME_IO],valid;
+	char vec_name       [QTD_DB][LEN_DB_NAME_IO],
+       vec_directory  [QTD_DB][LEN_DB_NAME_IO], valid;
 
   if(strcmp(db_name, connected.db_name) == 0) {
     printf("ERROR: You can not delete the database that you are connected.\n");
@@ -125,9 +125,10 @@ void dropDatabase(char *db_name){
   for(i=0; fgetc(DB) != EOF; i++) {
     fseek(DB, -1, 1);
 
-    fread(&valid			,sizeof(char), 			 1, DB);
-    fread(vec_name[i]  		,sizeof(char), LEN_DB_NAME_IO, DB);
-    fread(vec_directory[i] 	,sizeof(char), LEN_DB_NAME_IO, DB);
+    fread(&valid,           sizeof(char), 			       1, DB);
+    fread(vec_name[i],      sizeof(char), LEN_DB_NAME_IO, DB);
+    fread(vec_directory[i], sizeof(char), LEN_DB_NAME_IO, DB);
+
     if(valid && objcmp(vec_name[i], db_name) == 0){
     	valid = 0;
     	fseek(DB, ((LEN_DB_NAME_IO*2+1)*i), SEEK_SET); 	// posiciona o cabecote sobre o byte de validade
@@ -149,12 +150,11 @@ void dropDatabase(char *db_name){
 }
 
 void showDB() {
-
-	FILE *DB;
-	int i, qtdDB=0;
-	char vec_name 				[QTD_DB][LEN_DB_NAME_IO],
-		 vec_directory 			[QTD_DB][LEN_DB_NAME_IO],
-		 valid;
+    FILE *DB;
+    int i, qtdDB = 0;
+    char vec_name 				[QTD_DB][LEN_DB_NAME_IO],
+         vec_directory 		[QTD_DB][LEN_DB_NAME_IO],
+         valid;
 
     if((DB = fopen("data/DB.dat","r+b")) == NULL) {
        	printf("ERROR: cannot open file\n");
@@ -167,14 +167,14 @@ void showDB() {
     for(i=0; fgetc (DB) != EOF; i++) {
     	fseek(DB, -1, 1);
 
-    	fread(&valid			,sizeof(char), 			 1, DB);
-        fread(vec_name[i]  		,sizeof(char), LEN_DB_NAME_IO, DB);
-        fread(vec_directory[i] 	,sizeof(char), LEN_DB_NAME_IO, DB);
+    	fread(&valid,           sizeof(char), 			       1, DB);
+      fread(vec_name[i],      sizeof(char), LEN_DB_NAME_IO, DB);
+      fread(vec_directory[i], sizeof(char), LEN_DB_NAME_IO, DB);
 
-       	if(valid) {
-       		printf("%-20s| uffsdb  | UTF8     | pt_BR.UTF-8 | pt_BR.UTF-8 | \n", vec_name[i]);
-       		qtdDB++;
-        }
+      if(valid) {
+        printf("%-20s| uffsdb  | UTF8     | pt_BR.UTF-8 | pt_BR.UTF-8 | \n", vec_name[i]);
+        qtdDB++;
+      }
     }
 
     printf("(%d %s)\n\n\n\n", qtdDB, (1 >= qtdDB)? "row": "rows");

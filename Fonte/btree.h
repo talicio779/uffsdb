@@ -1,3 +1,5 @@
+#pragma once
+
 /**
 * estrutura do nodo da arvore b+
 **/
@@ -7,7 +9,7 @@ typedef struct nodo{
 	struct nodo *pai, *prox, *ant;
 	struct nodo **filhos;
 	int quant_data;
-} nodo;
+} nodo; //TODO: PASSAR PRA TYPES
 
 /* Cria novo nodo vazio e retorna-o. */
 nodo* criaNodo();
