@@ -247,6 +247,7 @@ int verificaChaveFK(char *nomeTabela,column *c, char *nomeCampo, char *valorCamp
         /*
         * Pq ele percorre todas as tuplas para verificar ??????
         * o campo vai mudar de nome no select ??? ?
+        * alguém deveria arrumar isso...
         */
         for(int j = 0; j < bufferpoll[page].nrec; j++){
             for (int i = 0; i < objeto.qtdCampos; i++)
@@ -344,41 +345,39 @@ int verificaChavePK(char *nomeTabela, column *c, char *nomeCampo, char *valorCam
 
         for(j = 0; j < bufferpoll[page].nrec; j++){
             for(int i = 0; i < objeto.qtdCampos; i++){
-                if (pagina) {
-                    column *c = &pagina[j].column[i];
-                    if (objcmp(c->nomeCampo, nomeCampo) == 0) {
-                        if (c->tipoCampo == 'S') {
-                            if (objcmp(c->valorCampo, valorCampo) == 0){
-                                free(pagina);
-                                free(bufferpoll);
-                                free(tabela);
-                                return ERRO_CHAVE_PRIMARIA;
-                            }
-                        } else if (c->tipoCampo == 'I') {
-                            int *n = (int *)&c->valorCampo[0];
+                column *c = &pagina[j].column[i];
+                if (objcmp(c->nomeCampo, nomeCampo) == 0) {
+                    if (c->tipoCampo == 'S') {
+                        if (objcmp(c->valorCampo, valorCampo) == 0){
+                            free(pagina);
+                            free(bufferpoll);
+                            free(tabela);
+                            return ERRO_CHAVE_PRIMARIA;
+                        }
+                    } else if (c->tipoCampo == 'I') {
+                        int *n = (int *)&c->valorCampo[0];
 
-                            if (*n == atoi(valorCampo)) {
-                                free(pagina);
-                                free(bufferpoll);
-                                free(tabela);
-                                return ERRO_CHAVE_PRIMARIA;
-                            }
-                        } else if (c->tipoCampo == 'D'){
-                            double *nn = (double *)&c->valorCampo[0];
+                        if (*n == atoi(valorCampo)) {
+                            free(pagina);
+                            free(bufferpoll);
+                            free(tabela);
+                            return ERRO_CHAVE_PRIMARIA;
+                        }
+                    } else if (c->tipoCampo == 'D'){
+                        double *nn = (double *)&c->valorCampo[0];
 
-                            if (*nn == atof(valorCampo)){
-                                free(pagina);
-                                free(bufferpoll);
-                                free(tabela);
-                                return ERRO_CHAVE_PRIMARIA;
-                            }
-                        } else if (c->tipoCampo == 'C'){
-                            if (c->valorCampo == valorCampo){
-                                free(pagina);
-                                free(bufferpoll);
-                                free(tabela);
-                                return ERRO_CHAVE_PRIMARIA;
-                            }
+                        if (*nn == atof(valorCampo)){
+                            free(pagina);
+                            free(bufferpoll);
+                            free(tabela);
+                            return ERRO_CHAVE_PRIMARIA;
+                        }
+                    } else if (c->tipoCampo == 'C'){
+                        if (c->valorCampo == valorCampo){
+                            free(pagina);
+                            free(bufferpoll);
+                            free(tabela);
+                            return ERRO_CHAVE_PRIMARIA;
                         }
                     }
                 }
@@ -580,7 +579,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
         else if (auxT[t].tipo == 'I'){ // Grava um dado do tipo inteiro.
           i = 0;
           while (i < strlen(auxC->valorCampo)){
-              if(auxC->valorCampo[i] < 48 || auxC->valorCampo[i] > 57){
+              if((auxC->valorCampo[i] < 48 || auxC->valorCampo[i] > 57) && auxC->valorCampo[i] != 45){
                   printf("ERROR: column \"%s\" expectet integer.\n", auxC->nomeCampo);
             free(tab); // Libera a memoria da estrutura.
             free(tab2); // Libera a memoria da estrutura.
@@ -600,7 +599,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
         else if (auxT[t].tipo == 'D'){ // Grava um dado do tipo double.
           x = 0;
           while (x < strlen(auxC->valorCampo)){
-              if((auxC->valorCampo[x] < 48 || auxC->valorCampo[x] > 57) && (auxC->valorCampo[x] != 46)){
+              if((auxC->valorCampo[x] < 48 || auxC->valorCampo[x] > 57) && (auxC->valorCampo[x] != 46) && (auxC->valorCampo[x] != 45)){
                   printf("ERROR: column \"%s\" expect double.\n", auxC->nomeCampo);
                   erro = ERRO_NO_TIPO_DOUBLE;
                   goto fim;
@@ -697,11 +696,11 @@ void insert(rc_insert *s_insert) {
 				}
 			}
 		}
-    else {
-      printf("ERROR: INSERT has more expressions than target columns.\n");
-		  flag = 1;
-		}
-	}
+        else {
+        printf("ERROR: INSERT has more expressions than target columns.\n");
+            flag = 1;
+            }
+        }
 
     if (!flag && finalizaInsert(s_insert->objName, colunas, tamTuplaSemByteControle(tabela->esquema, objeto)) == SUCCESS)  printf("INSERT 0 1\n");
 
@@ -845,16 +844,14 @@ void printConsulta(Lista *proj, Lista *result){
     printf("\n %d Linha%s.\n", result->tam, result->tam == 1 ? "" : "s");
 }
 
-void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColunasTab, int qtdColunasProj){
+void adcResultado(Lista *resultado, tupla *tuple, int *indiceProj, int qtdColunasProj){
     adcNodo(resultado, resultado->ult, (void *)novaLista(NULL));
     Lista *tuplaRes = (Lista *)(resultado->ult->inf);
-    inf_where **listNw = (inf_where **)malloc(sizeof(inf_where *) * qtdColunasTab);
-    int i = 0;
+    inf_where **listNw = (inf_where **)malloc(sizeof(inf_where *) * tuple->ncols);
 
-    for(Nodo *n1 = tupla->prim; n1; n1 = n1->prox, i++){
-        column *c = (column *)(n1->inf);
-            
+    for(uint i = 0; i < tuple->ncols; i++){
         inf_where *nw = malloc(sizeof(inf_where));
+        column *c = &tuple->column[i];
         nw->id = c->tipoCampo;
 
         if(c->valorCampo == (void *)COLUNA_NULL) nw->token = COLUNA_NULL;
@@ -887,16 +884,76 @@ void adcResultado(Lista *resultado, Lista *tupla, int *indiceProj, int qtdColuna
     free(listNw);
 }
 
-Lista *op_select(inf_select *select) {
-  //inicio das validações.
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para deletar tuplas.
+    Parametros: Nome da tabela (char).
+    Retorno:    Void.
+   ---------------------------------------------------------------------------------------------*/
+void op_delete(Lista *toDeleteTuples, char *tabelaName) {
+    tp_table *esquema;
+    struct fs_objects objeto = leObjeto(tabelaName);
+    esquema = leSchema(objeto);
+    tp_buffer *bufferpoll = initbuffer();
+    int countDeletedTuples = 0;
+
+    int tuplaCount = 0, erro;
+    do {
+        erro = colocaTuplaBuffer(bufferpoll, tuplaCount, esquema, objeto);
+        tuplaCount++;
+    } while(erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS);
+    tuplaCount--; // ajusta para o número correto de páginas lidas
+
+    for (Nodo *temp = toDeleteTuples->prim; temp; temp = temp->prox) {
+        tupla *t = (tupla *)temp->inf;
+        *(bufferpoll[t->bufferPage].data+t->offset) = 1; //marca a tupla como deletada
+        bufferpoll[t->bufferPage].db = 1; //marca a página como modificada
+        countDeletedTuples++;
+    }
+
+    for (int p = 0; p < PAGES && bufferpoll[p].nrec; p++) {
+        int result = writeBufferToDisk(bufferpoll, &objeto, p, bufferpoll->nrec*tamTupla(esquema, objeto));
+        if (!result) {
+            fprintf(stderr, "ERROR: failed to persist changes to disk\n");
+            free(bufferpoll);
+            free(esquema);
+            return;
+        }
+    }
+
+    printf("DELETED %d %s\n", countDeletedTuples, (countDeletedTuples != 1) ? "rows" : "row");
+
+    free(bufferpoll);
+    free(esquema);
+}
+
+int afterTrigger(Lista *resultado, inf_query *query) {
+    tp_table *fkColumns = verificaIntegridade(query->tabela);
+    for(tp_table *temp = fkColumns; temp; temp = temp->next) {
+        nodo *bplusRoot = buildBplusForPK(temp);
+        for(Nodo *aux; aux; aux = aux->prox) {
+            tupla *t = aux->inf;
+            for(column *col = t->column; col; col = col->next){
+                if(!strncmp(col->nomeCampo, temp->nome, TAMANHO_NOME_CAMPO)){
+                    if(buscaChaveBtree(bplusRoot, col->valorCampo)){
+                        printf("\nERROR: tuple with primary key '%s' is referenced by table '%s' via foreign key '%s'", col->nomeCampo, temp->tabelaApt, temp->nome);
+                        return 0;
+                    }
+                }
+            }
+        }
+    }
+    return 1;
+}
+
+Lista *handleTableOperation(inf_query *query, char tipo) {
     tp_table *esquema;
     tp_buffer *bufferpoll;
     struct fs_objects objeto;
-    if(!verificaNomeTabela(select->tabela)){
-        printf("\nERROR: relation \"%s\" was not found.\n\n\n", select->tabela);
+    if(!verificaNomeTabela(query->tabela)){
+        printf("\nERROR: relation \"%s\" was not found.\n\n\n", query->tabela);
         return NULL;
     }
-    objeto = leObjeto(select->tabela);
+    objeto = leObjeto(query->tabela);
     esquema = leSchema(objeto);
     if(esquema == ERRO_ABRIR_ESQUEMA){
         printf("ERROR: schema cannot be created.\n");
@@ -910,12 +967,26 @@ Lista *op_select(inf_select *select) {
         printf("ERROR: no memory available to allocate buffer.\n");
         return NULL;
     }
-    int tuplasLidas, erro = SUCCESS, tuplasRemovidas = 0;
-    for(tuplasLidas = 0; erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS; tuplasLidas++){
-        erro = colocaTuplaBuffer(bufferpoll, tuplasLidas, esquema, objeto);
-        if(erro == ERRO_LEITURA_DADOS_DELETADOS) tuplasRemovidas++;
+
+    int pageCount = 0, erro;
+    do {
+        erro = colocaTuplaBuffer(bufferpoll, pageCount, esquema, objeto);
+        pageCount++;
+    } while(erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS);
+    pageCount--; // ajusta para o número correto de páginas lidas
+
+    int *indiceProj = NULL, qtdCamposProj = 0;
+    if(tipo == 's') {
+        indiceProj = (int *)malloc(sizeof(int) * query->proj->tam);
+        if(!validaProj(query->proj, esquema, objeto.qtdCampos, indiceProj)){
+            free(bufferpoll);
+            free(esquema);
+            free(indiceProj);
+            return NULL;
+        }
+        qtdCamposProj =  ((char *)query->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : query->proj->tam;
     }
-    tuplasLidas-= tuplasRemovidas + 1;
+
     tupla *pagina = getPage(bufferpoll, esquema, objeto, 0);
     if(!pagina){
         printf("Tabela vazia.\n");
@@ -923,67 +994,53 @@ Lista *op_select(inf_select *select) {
         free(esquema);
         return NULL;
     }
-
-    int *indiceProj = (int *)malloc(sizeof(int) * select->proj->tam);
-    if(!validaProj(select->proj, esquema, objeto.qtdCampos, indiceProj)){
+    if(!validaColsWhere(query->tok, esquema, objeto.qtdCampos)){
+        free(indiceProj);
         free(bufferpoll);
         free(esquema);
-        free(indiceProj);
-        return NULL;
-    }
-
-    if(!validaColsWhere(select->tok, esquema, objeto.qtdCampos)){
-        free(bufferpoll);
-        free(esquema);
-        free(indiceProj);
         return NULL;
     }
     int k;
     char abortar = 0;
-    int qtdCamposProj =  ((char *)select->proj->prim->inf)[0] == '*' ? objeto.qtdCampos : select->proj->tam;
-    Lista *tupla = novaLista(NULL), *resultado = novaLista(NULL);
-    for(int p = 0; !abortar && tuplasLidas; tuplasLidas -= bufferpoll[p++].nrec){
+    Lista *resultado = novaLista(NULL);
+    for(int p = 0; !abortar && bufferpoll[p].nrec; p++) {
         pagina = getPage(bufferpoll, esquema, objeto, p);
         if(pagina == ERRO_PARAMETRO){
             printf("ERROR: could not open the table.\n");
+            free(indiceProj);
             free(bufferpoll);
             free(esquema);
-            free(indiceProj);
             return NULL;
         }
         for(k = 0; !abortar && k < bufferpoll[p].nrec; k++){
-            for(int i = 0; i < objeto.qtdCampos; i++)
-                adcNodo(tupla, tupla->ult, (void *)(&pagina[k].column[i]));
-            char sat = 0;
+            tupla *currentTuple = &pagina[k];
+            char satisfies = 0;
 
-            if(select->tok){
-                Lista *l = resArit(select->tok, tupla);
-                if(l){
+            if(query->tok){
+                Lista *l = resArit(query->tok, currentTuple);
+                if(l) {
                     Lista *l2 = relacoes(l);
-                    sat = (logPosfixa(l2) != 0);
+                    satisfies = logPosfixa(l2);
                 }
                 else abortar = 1;
             }
-            else sat = 1;
-            if(!abortar && sat) adcResultado(resultado, tupla, indiceProj, objeto.qtdCampos, qtdCamposProj);
-
-            for(Nodo *n1 = tupla->prim, *n2; n1; n1 = n2){
-                n2 = n1->prox;
-                rmvNodoPtr(tupla, n1);
-                //não precisa dar free na informação
-                //pois é ponteiro pra pagina[j]
+            else satisfies = 1;
+            if(!abortar && satisfies) {
+                tupla *t = (tupla*)malloc(sizeof(tupla));
+                memcpy(t, currentTuple, sizeof(tupla));
+                (tipo == 's') ? adcResultado(resultado, currentTuple, indiceProj, qtdCamposProj) : adcNodo(resultado, resultado->ult, t);
             }
-            tupla->prim = tupla->ult = NULL;
         }
+        free(pagina);
     }
     if(abortar) resultado = NULL;
     
-    free(indiceProj); indiceProj = NULL;
-    free(tupla); tupla = NULL;
-    free(esquema); esquema = NULL;
-    free(bufferpoll); bufferpoll = NULL;
+    free(indiceProj);
+    free(esquema);
+    free(bufferpoll);
     return resultado;
 }
+
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Copia todas as informações menos a tabela do objeto, que será removida.
     Parametros: Objeto que será removido do schema.
@@ -1227,6 +1284,7 @@ void createTable(rc_insert *t) {
   strcpylower(t->objName, t->objName);        //muda pra minúsculo
   char *tableName = (char*) malloc(sizeof(char)*(TAMANHO_NOME_TABELA+10)),
                     fkTable[TAMANHO_NOME_TABELA], fkColumn[TAMANHO_NOME_CAMPO];
+    ushort codFK;
 
   strncpylower(tableName, t->objName, TAMANHO_NOME_TABELA);
   strcat(tableName, ".dat\0");                  //tableName.dat
@@ -1267,13 +1325,14 @@ void createTable(rc_insert *t) {
     
   	if(t->attribute[i] == FK){
   		strncpylower(fkTable, t->fkTable[i], TAMANHO_NOME_TABELA);
+        codFK = 1;
   		strncpylower(fkColumn,t->fkColumn[i], TAMANHO_NOME_CAMPO);
   	}
     else{
   		strcpy(fkTable, "");
   		strcpy(fkColumn, "");
   	}
-    tab = adicionaCampo(tab, t->columnName[i], t->type[i], size, t->attribute[i], fkTable, fkColumn);
+    tab = adicionaCampo(tab, t->columnName[i], t->type[i], size, t->attribute[i], fkTable, fkColumn, codFK);
     if((objcmp(fkTable, "") != 0) || (objcmp(fkColumn, "") != 0)){
       if(verifyFK(fkTable, fkColumn) == 0){
   		  printf("ERROR: attribute FK cannot be referenced\n");

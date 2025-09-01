@@ -1,7 +1,19 @@
 # uffsdb
 A simple educational DBMS
 
-# how to comipile
+# dependencies
+ 1. Bison
+ 2. Flex
+ 3. Library readline
+
+ - For Ubuntu/Debian-based systems, run:
+ ```
+ sudo apt install bison
+ sudo apt install flex
+ sudo apt-get install libreadline-dev
+```
+
+# how to compile
  uffsdb/Fonte/make
 
 # how to execute

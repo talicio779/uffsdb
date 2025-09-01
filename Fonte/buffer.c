@@ -16,25 +16,12 @@
 static int isDeleted(char *linha);
 
 // INICIALIZACAO DO BUFFER
-tp_buffer * initbuffer(){
+tp_buffer * initbuffer() {
+    tp_buffer *bp = (tp_buffer*)calloc(PAGES, sizeof(tp_buffer));
 
-    tp_buffer *bp = (tp_buffer*)malloc(sizeof(tp_buffer)*PAGES);
-    memset(bp, 0, sizeof(tp_buffer)*PAGES);
-
-    int i;
-    tp_buffer *temp = bp;
-
-    if(bp == NULL)
-        return ERRO_DE_ALOCACAO;
-    for (i = 0;i < PAGES; i++){
-        temp->db=0;
-        temp->pc=0;
-        temp->nrec=0;
-        temp++;
-    }
-
-    return bp;
+    return bp == NULL ? ERRO_DE_ALOCACAO : bp;
 }
+
 //// imprime os dados no buffer (deprecated?)
 int printbufferpoll(tp_buffer *buffpoll, tp_table *s,struct fs_objects objeto, int num_page){
 
@@ -79,14 +66,15 @@ tupla *getPage(tp_buffer *buffer, tp_table *campos, struct fs_objects objeto, in
             i+=tamTupla(campos, objeto);
             continue;
         }
-        tuplas[indiceTupla].endereco = i; //para o 
-
+        tuplas[indiceTupla].offset = i; 
+        tuplas[indiceTupla].ncols = objeto.qtdCampos;
         i++; //para o byte de deleted
         memcpy(nullos, buffer[page].data + i, objeto.qtdCampos);
         i += objeto.qtdCampos;
 
 
         tuplas[indiceTupla].column = (column *)malloc(sizeof(column) * objeto.qtdCampos);
+        tuplas[indiceTupla].bufferPage = page;
         for (int ic = 0; ic < objeto.qtdCampos; ic++){
             column *c = &tuplas[indiceTupla].column[ic];
 
@@ -171,9 +159,6 @@ char *getTupla(tp_table *campos,struct fs_objects objeto, int from){ //Pega uma 
     fseek(dados, -1, SEEK_CUR);
     fread(linha, sizeof(char), tamTpl, dados); //Traz a tupla inteira do arquivo
 
-
-  
-
     fclose(dados);
     return linha;
 }
@@ -219,6 +204,34 @@ void cria_campo(int tam, int header, char *val, int x) {
     return;
   }
   for(i = 0; i < x; i++) printf(" ");
+}
+
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Utilizada para gravar as mudanças do buffer no disco.
+    Parametros: Buffer (tp_buffer), dados da tabela (fs_objects), número de blocos e offset do bloco.
+    Retorno:    1 para sucesso, 0 para falha.
+   ---------------------------------------------------------------------------------------------*/
+int writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects *objeto, int blockNumber, int blockOffset) {
+    int success = 1; // flag de sucesso porque sucesso deveria valer 1 não 0!
+    char directory[LEN_DB_NAME_IO];
+    strcpy(directory, connected.db_directory);
+    strcat(directory, objeto->nArquivo);
+
+    FILE *dados = fopen(directory, "r+b");
+    if (!dados) {
+        printf("ERROR: Unable to open file for writing.\n");
+        return 0;
+    }
+    
+    fseek(dados, blockNumber*SIZE, SEEK_SET);
+
+    fwrite(bufferpoll->data, blockOffset, 1, dados); //TODO: arrumar o blockOffset
+
+    fflush(dados);
+
+    fclose(dados);
+
+    return success;
 }
 
 static int isDeleted(char *linha){

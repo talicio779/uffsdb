@@ -2,6 +2,8 @@
   #include "Utility.h"
 #endif
 
+#include "base.h"
+
 #define FTYPES 1 // flag para identificar se types.h já foi incluída
 
 struct fs_objects { // Estrutura usada para carregar fs_objects.dat
@@ -13,6 +15,7 @@ struct fs_objects { // Estrutura usada para carregar fs_objects.dat
 };
 
 typedef struct tp_table{ // Estrutura usada para carregar fs_schema.dat
+    int id;                       // Código da tabela.                   2bytes
     char nome[TAMANHO_NOME_CAMPO];  // Nome do Campo.                    40bytes
     char tipo;                      // Tipo do Campo.                     1bytes
     int tam;                        // Tamanho do Campo.                  4bytes
@@ -30,7 +33,9 @@ typedef struct column{ // Estrutura utilizada para inserir em uma tabela, exclui
 }column;
 
 typedef struct tupla {
-    unsigned int endereco;
+    unsigned int offset;
+    uint ncols; // Número de colunas na tupla.
+    uint bufferPage; // Página do buffer onde a tupla está armazenada.
     column *column;
 }tupla;
 
@@ -63,11 +68,13 @@ typedef struct inf_where{
   void *token;
 }inf_where;
 
-typedef struct inf_select{
-  char *tabela;
-  int tamTokens;
-  Lista *tok,*proj;
-}inf_select;
+typedef struct  inf_query {
+  char *tabela;     // Nome da tabela
+  int tamTokens;    // Número de tokens na cláusula WHERE
+  Lista *tok;       // Lista de condições WHERE
+  Lista *proj;      // Colunas recuperadas (NULL para DELETE)
+  char queryType;   // 'S' for SELECT, 'D' for DELETE
+} inf_query;
 
 typedef struct rc_parser {
     int         mode;           // Modo de operação (definido em /interface/parser.h)
@@ -90,6 +97,18 @@ typedef struct db_connected {
     char *db_name;
     int conn_active;
 }db_connected;
+
+// Sessão para fs do sistema 
+
+typedef struct fs_constraint {
+    uint tableId; // ID da tabela
+    uint idFKtable; //  ID da Tabela referenciada
+    char constraintName[TAMANHO_NOME_CONSTRAINT]; // Nome da restrição
+    char columnName[TAMANHO_NOME_CAMPO]; // Nome da coluna
+    char columnApt[TAMANHO_NOME_CAMPO]; // Nome da coluna referenciada
+    byte constraintType; // Tipo de restrição (PK, FK, NPK)
+    byte deltype; // Tipo de deleção (CASCADE, SET NULL, RESTRICT)
+} fs_constraint;
 
 // Union's utilizados na conversão de variáveis do tipo inteiro e double.
 

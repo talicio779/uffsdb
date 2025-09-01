@@ -35,7 +35,7 @@ rc_insert GLOBAL_DATA;
 /*
   Informações da operação select.
 */
-inf_select SELECT;
+inf_query QUERY;
 
 /* Estrutura auxiliar do reconhecedor.
  */
@@ -67,25 +67,26 @@ void notConnected() {
     printf("ERROR: you are not connected to any database.\n");
 }
 
-void adcTabelaSelect(char *nome){
-  SELECT.tabela = malloc(strlen(nome)*sizeof(char));
-  strcpy(SELECT.tabela,nome);
+void adcTabelaQuery(char *nome, char type){
+  QUERY.tabela = malloc(strlen(nome)*sizeof(char));
+  strcpy(QUERY.tabela,nome);
+  QUERY.queryType = type;
 }
 
-int cmpSelect(void *a,void *b){
+int cmpSelect(void *a, void *b){
   return strcmp((char *)a,(char *)b);
 }
 
 void adcTokenWhere(char *token,int id){
-  if(!SELECT.tok) SELECT.tok = novaLista(&cmpSelect);
-  adcNodo(SELECT.tok, SELECT.tok->ult, (void *)novoTokenWhere(token,id));
+  if(!QUERY.tok) QUERY.tok = novaLista(&cmpSelect);
+  adcNodo(QUERY.tok, QUERY.tok->ult, (void *)novoTokenWhere(token,id));
 }
 
 void adcProjSelect(char *col){
   char *str = malloc(sizeof(char)*strlen(col));
   strcpy(str,col);
-  if(!SELECT.proj) SELECT.proj = novaLista(NULL);
-  adcNodo(SELECT.proj, SELECT.proj->ult, (void *)str);
+  if(!QUERY.proj) QUERY.proj = novaLista(NULL);
+  adcNodo(QUERY.proj, QUERY.proj->ult, (void *)str);
 }
 
 void setObjName(char **nome) {
@@ -199,20 +200,22 @@ void limparLista(Lista *l){
   free(l);
 }
 
-void resetSelect(){
-  if(SELECT.tabela){
-    free(SELECT.tabela);
-    SELECT.tabela = NULL;
-  }
-  if(SELECT.tok) limparLista(SELECT.tok);
-  SELECT.tok = NULL;
-  if(SELECT.proj) limparLista(SELECT.proj);
-  SELECT.proj = NULL;
+void resetQuery() {
+    if(getMode() == OP_SELECT || getMode() == OP_DELETE) {
+        if(QUERY.tabela) {
+            free(QUERY.tabela);
+            QUERY.tabela = NULL;
+        }
+        if(QUERY.tok) limparLista(QUERY.tok);
+        QUERY.tok = NULL;
+        if(QUERY.proj) limparLista(QUERY.proj);
+        QUERY.proj = NULL;
+    }
 }
 
 void clearGlobalStructs() {
     int i;
-    resetSelect();
+    resetQuery();
     if (GLOBAL_DATA.objName) {
         free(GLOBAL_DATA.objName);
         GLOBAL_DATA.objName = NULL;
@@ -264,6 +267,10 @@ void setMode(char mode) {
     GLOBAL_PARSER.step++;
 }
 
+char getMode() {
+    return GLOBAL_PARSER.mode;
+}
+
 int interface() {
     pthread_t pth;
     pthread_create(&pth, NULL, (void*)clearGlobalStructs, NULL);
@@ -272,7 +279,7 @@ int interface() {
     char prompt[LEN_DB_NAME + 4]; // 3 para "=# " +1 para \0
     Lista *resultado;
     connect("uffsdb"); // conecta automaticamente no banco padrão
-    SELECT.tok = SELECT.proj = NULL;
+    QUERY.tok = QUERY.proj = NULL;
     historyInit();
     while(1){
         if (!connected.conn_active) {
@@ -302,10 +309,17 @@ int interface() {
                                 printf("WARNING: Nothing to be inserted. Command ignored.\n");
                             break;
                         case OP_SELECT:
-                            resultado = op_select(&SELECT);
-                            if(resultado){
-                            printConsulta(SELECT.proj, resultado);
-                            resultado = NULL;
+                            resultado = handleTableOperation(&QUERY, 's');
+                            if (resultado) {
+                                printConsulta(QUERY.proj, resultado);
+                                resultado = NULL;
+                            }
+                            break;
+                        case OP_DELETE:
+                            resultado = handleTableOperation(&QUERY, 'd');
+                            if (resultado && afterTrigger(resultado, &QUERY)) {
+                                op_delete(resultado, QUERY.tabela);
+                                resultado = NULL;
                             }
                             break;
                         case OP_CREATE_TABLE:

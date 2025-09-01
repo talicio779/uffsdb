@@ -23,13 +23,14 @@
 (?i:SELECT)						return SELECT;
 (?i:FROM)						return FROM;
 (?i:WHERE)						return WHERE;
+(?i:DELETE)						return DELETE;
 (?i:CREATE)						return CREATE;
 (?i:TABLE)						return TABLE;
 (?i:ON)						    return ON;
 (?i:INDEX)						return INDEX;
 (?i:INTEGER)					return INTEGER;
-(?i:AND)					return LOGICO;
-(?i:OR)					return LOGICO;
+(?i:AND)						return LOGICO;
+(?i:OR)							return LOGICO;
 (?i:INT)						return INTEGER;
 (?i:VARCHAR)					return VARCHAR;
 (?i:CHAR)						return CHAR;
