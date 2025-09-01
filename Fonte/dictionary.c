@@ -548,7 +548,6 @@ tp_table* verificaIntegridade(char *nTabela){
         fread(&esquema.chave, sizeof(int), 1, fp);
         fread(&esquema.tabelaApt, TAMANHO_NOME_TABELA, 1, fp);
         fread(&esquema.attApt, TAMANHO_NOME_CAMPO, 1, fp);
-        printf(" \n%lu ", ftell(fp));
         if(!strncmp(nTabela, esquema.tabelaApt, 20) && esquema.chave == FK){
             tp_table *e = (tp_table *)malloc(sizeof(tp_table));
             memcpy(e, &esquema, sizeof(tp_table));
