@@ -125,13 +125,15 @@ void setColumnFKColumnCreate(char **nome);
  */
 void clearGlobalStructs();
 
-/* Define a operação que será realizada pelo identificador através
+/* 
+ * Define a operação que será realizada pelo identificador através
  * dos tokens iniciais.
  */
 void setMode(char mode);
 
-/* Retorna o modo atual do identificador, que será usado
- */
+/* 
+* Retorna o modo atual do identificador, que será usado
+*/
 char getMode();
 
 /*

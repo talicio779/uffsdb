@@ -2,9 +2,13 @@
 A simple educational DBMS
 
 # dependencies
+ Bison
+ Flex
  Library readline
 
  - For Ubuntu/Debian-based systems, run:
+ ```sudo apt install bison```
+ ```sudo apt install flex```
  ```sudo apt-get install libreadline-dev```
 
 # how to compile
