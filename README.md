@@ -2,14 +2,16 @@
 A simple educational DBMS
 
 # dependencies
- Bison
- Flex
- Library readline
+ 1. Bison
+ 2. Flex
+ 3. Library readline
 
  - For Ubuntu/Debian-based systems, run:
- ```sudo apt install bison```
- ```sudo apt install flex```
- ```sudo apt-get install libreadline-dev```
+ ```
+ sudo apt install bison
+ sudo apt install flex
+ sudo apt-get install libreadline-dev
+```
 
 # how to compile
  uffsdb/Fonte/make
