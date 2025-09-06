@@ -549,7 +549,7 @@ tp_table* verificaIntegridade(char *nTabela){
         fread(&esquema.tabelaApt, TAMANHO_NOME_TABELA, 1, fp);
         fread(&esquema.attApt, TAMANHO_NOME_CAMPO, 1, fp);
         printf(" \n%lu ", ftell(fp));
-        if(!strncmp(nTabela, esquema.tabelaApt, 20) && esquema.chave == FK){
+        if(esquema.chave == FK && !strncmp(nTabela, esquema.tabelaApt, 20)){
             tp_table *e = (tp_table *)malloc(sizeof(tp_table));
             memcpy(e, &esquema, sizeof(tp_table));
             e->next = fkColumns;
@@ -562,8 +562,10 @@ tp_table* verificaIntegridade(char *nTabela){
 
 nodo *buildBplusForPK(tp_table *filho) { //TODO: RENOMEAR FUNÇÃO
     struct fs_objects tabela = leObjetoById(filho->id);
-    char *pkFileName = (char *)malloc(TAMANHO_NOME_INDICE);
-    pkFileName = strcat(tabela.nome, filho->nome);
+    char *pkFileName = (char *)malloc(strlen(connected.db_directory) + TAMANHO_NOME_INDICE + 1);
+    pkFileName = strncpy(pkFileName, connected.db_directory, TAMANHO_NOME_INDICE);
+    pkFileName = strncat(pkFileName, tabela.nome, TAMANHO_NOME_INDICE);
+    pkFileName = strncat(pkFileName, filho->nome, TAMANHO_NOME_INDICE);
     return constroi_bplus(pkFileName);
 }
 

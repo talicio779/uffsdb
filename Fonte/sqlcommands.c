@@ -429,35 +429,33 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                     goto fim_free_mem;
                 }
 
-                arquivoIndice = (char *)malloc(sizeof(char) *
-                  (strlen(connected.db_directory) + strlen(nome) + strlen(tab2[j].nome)));
+                arquivoIndice = (char *)malloc(sizeof(char) * (strlen(connected.db_directory) + strlen(nome) + strlen(tab2[j].nome)));
                 strcpy(arquivoIndice, connected.db_directory); //diretorio
                 strcat(arquivoIndice, nome); //nome da tabela
-        				strcat(arquivoIndice, tab2[j].nome); //nome do atributo
+        		strcat(arquivoIndice, tab2[j].nome); //nome do atributo
 
         		// verificacao da chave primaria
         		raiz = constroi_bplus(arquivoIndice);
                 free(arquivoIndice);
         		if(raiz != NULL) {
-        			encontrou = buscaChaveBtree(raiz, temp->valorCampo); 
-        			if (encontrou) {
-                //Compara para ver se é not null
-                if (tab2[j].chave == PK || tab2[j].chave == FK) {
-                  if(strcmp(temp->valorCampo, "0") == 0){
-                    printf("ERROR: NULL value in column '%s' violates NOT-NULL constraint.\n", temp->nomeCampo);
-                    return ERRO_NAO_INSERIR_EM_NOT_NULL;
-                  }
-                }
-        				printf("ERROR: duplicated key value violates unique constraint \"%s_pkey\"\nDETAIL:  Key (%s)=(%s) already exists.\n",nome,temp->nomeCampo,temp->valorCampo);
-        				free(auxT); // Libera a memoria da estrutura.
-        				//free(temp); // Libera a memoria da estrutura.
-        				free(tab); // Libera a memoria da estrutura.
-        				free(tab2); // Libera a memoria da estrutura.
-        				return ERRO_CHAVE_PRIMARIA;
-        			}
+                    encontrou = buscaChaveBtree(raiz, temp->valorCampo); 
+                    if (encontrou) {
+                        //Compara para ver se é not null
+                        if (tab2[j].chave == PK || tab2[j].chave == FK) {
+                            if(strcmp(temp->valorCampo, "0") == 0){
+                                printf("ERROR: NULL value in column '%s' violates NOT-NULL constraint.\n", temp->nomeCampo);
+                                return ERRO_NAO_INSERIR_EM_NOT_NULL;
+                            }
+                        }
+                        printf("ERROR: duplicated key value violates unique constraint \"%s_pkey\"\nDETAIL:  Key (%s)=(%s) already exists.\n",nome,temp->nomeCampo,temp->valorCampo);
+                        free(auxT); // Libera a memoria da estrutura.
+                        free(tab); // Libera a memoria da estrutura.
+                        free(tab2); // Libera a memoria da estrutura.
+                        return ERRO_CHAVE_PRIMARIA;
+                    }
         		}
-        		flag = 1;
-            break;
+        		flag = 1; // TODO: ENTENDER ESSA FLAG
+                break;
 
             case FK:
                 if(temp->valorCampo == COLUNA_NULL) {
@@ -465,9 +463,8 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                     erro = ERRO_INDEX_NULL;
                     goto fim_free_mem;
                 }
-              //monta o nome do arquivo de indice da chave estrangeira
-                arquivoIndice = (char *)malloc(sizeof(char) *
-                    (strlen(connected.db_directory) + strlen(tab2[j].tabelaApt) + strlen(tab2[j].attApt)));// caminho diretorio de arquivo de indice
+                //monta o nome do arquivo de indice da chave estrangeira
+                arquivoIndice = (char *)malloc(sizeof(char) * (strlen(connected.db_directory) + strlen(tab2[j].tabelaApt) + strlen(tab2[j].attApt)));// caminho diretorio de arquivo de indice
                 strcpy(arquivoIndice, connected.db_directory); //diretorio
                 strcat(arquivoIndice, tab2[j].tabelaApt);
                 strcat(arquivoIndice, tab2[j].attApt);
@@ -476,8 +473,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                 free(arquivoIndice);
                 if(raizfk == NULL) { //se não encontra faz a verificação sem indice b+
         			if (strlen(tab2[j].attApt) != 0 && strlen(tab2[j].tabelaApt) != 0){
-        				erro = verificaChaveFK(nome, temp, tab2[j].nome, temp->valorCampo,
-                        tab2[j].tabelaApt, tab2[j].attApt);
+        				erro = verificaChaveFK(nome, temp, tab2[j].nome, temp->valorCampo, tab2[j].tabelaApt, tab2[j].attApt);
                         if (erro != SUCCESS){
                             printf("ERROR: invalid reference to \"%s.%s\". The value \"%s\" does not exist.\n", tab2[j].tabelaApt,tab2[j].attApt,temp->valorCampo);
                             erro = ERRO_CHAVE_ESTRANGEIRA;
@@ -493,7 +489,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                     }
                     erro = SUCCESS;
                 }
-            break;
+                break;
         }
     }
     flag = 0;
@@ -534,7 +530,6 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                 goto fim;
             }
 			char * nomeAtrib2;
-            //ntuplas = ntuplas-1;
             decnTuplas();
       		nomeAtrib2 = (char*)malloc((strlen(nome)+strlen(auxC->nomeCampo) + strlen(connected.db_directory))* sizeof(char));
       		strcpy(nomeAtrib2, connected.db_directory);
@@ -544,6 +539,16 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
       		raiz2 = constroi_bplus(nomeAtrib2);
             insere_indice(raiz2, auxC->valorCampo, nomeAtrib2, offset);
             free(nomeAtrib2);
+        }
+
+        if (auxT[t].chave == FK) {
+			char * nomeAtrib;
+      		nomeAtrib = (char*)malloc((strlen(nome)+strlen(auxC->nomeCampo) + strlen(connected.db_directory))* sizeof(char));
+      		strcpy(nomeAtrib, connected.db_directory);
+      		strcat(nomeAtrib, nome);
+      		strcat(nomeAtrib,auxC->nomeCampo);
+            insere_indice(raizfk, auxC->valorCampo, nomeAtrib, offset);
+            free(nomeAtrib);
         }
 
         if(auxC->valorCampo == COLUNA_NULL) {
@@ -657,25 +662,22 @@ void insert(rc_insert *s_insert) {
 	abreTabela(s_insert->objName, &objeto, &tabela->esquema); //retorna o esquema para a insere valor
 	strcpylower(tabela->nome, s_insert->objName);
 
-   DEBUG_PRINT("INSERT - TableName <--------- %s", tabela->nome);
+    DEBUG_PRINT("INSERT - TableName <--------- %s", tabela->nome);
 
 	if(s_insert->columnName != NULL){
-		if (allColumnsExists(s_insert, tabela)){
-			for (esquema = tabela->esquema; esquema != NULL; esquema = esquema->next){
-				if(typesCompatible(esquema->tipo,getInsertedType(s_insert, esquema->nome, tabela))){
+		if (allColumnsExists(s_insert, tabela)) {
+			for (esquema = tabela->esquema; esquema != NULL; esquema = esquema->next) {
+				if(typesCompatible(esquema->tipo,getInsertedType(s_insert, esquema->nome, tabela))) {
 					colunas = insereValor(tabela, colunas, esquema->nome, getInsertedValue(s_insert, esquema->nome, tabela));
-				}
-        else {
+				} else {
 					printf("ERROR: data type invalid to column '%s' of relation '%s' (expected: %c, received: %c).\n", esquema->nome, tabela->nome, esquema->tipo, getInsertedType(s_insert, esquema->nome, tabela));
 					flag=1;
 				}
 			}
-		}
-    else {
+		} else {
 			flag = 1;
 		}
-	}
-  else {
+	} else {
 		if (s_insert->N == objeto.qtdCampos) {
 			for(i=0; i < objeto.qtdCampos; i++) {
 
@@ -688,19 +690,18 @@ void insert(rc_insert *s_insert) {
 					s_insert->type[i] = 'D';
 				}
 
-				if(s_insert->type[i] == tabela->esquema[i].tipo)
-					colunas = insereValor(tabela, colunas, tabela->esquema[i].nome, s_insert->values[i]);
-				else {
+				if(s_insert->type[i] == tabela->esquema[i].tipo) {
+                    colunas = insereValor(tabela, colunas, tabela->esquema[i].nome, s_insert->values[i]);
+                } else {
 					printf("ERROR: data type invalid to column '%s' of relation '%s' (expected: %c, received: %c).\n", tabela->esquema[i].nome, tabela->nome, tabela->esquema[i].tipo, s_insert->type[i]);
 					flag=1;
 				}
 			}
-		}
-        else {
-        printf("ERROR: INSERT has more expressions than target columns.\n");
+		} else {
+            printf("ERROR: INSERT has more expressions than target columns.\n");
             flag = 1;
-            }
         }
+    }
 
     if (!flag && finalizaInsert(s_insert->objName, colunas, tamTuplaSemByteControle(tabela->esquema, objeto)) == SUCCESS)  printf("INSERT 0 1\n");
 
@@ -930,12 +931,13 @@ int afterTrigger(Lista *resultado, inf_query *query) {
     tp_table *fkColumns = verificaIntegridade(query->tabela);
     for(tp_table *temp = fkColumns; temp; temp = temp->next) {
         nodo *bplusRoot = buildBplusForPK(temp);
-        for(Nodo *aux; aux; aux = aux->prox) {
-            tupla *t = aux->inf;
-            for(column *col = t->column; col; col = col->next){
-                if(!strncmp(col->nomeCampo, temp->nome, TAMANHO_NOME_CAMPO)){
+        for(Nodo *aux = resultado->prim; aux; aux = aux->prox) {
+            tupla *tupla = aux->inf;
+            for(int i = 0; i < tupla->ncols; i++) {
+                column *col = &tupla->column[i];
+                if(!strncmp(col->nomeCampo, temp->attApt, TAMANHO_NOME_CAMPO)){
                     if(buscaChaveBtree(bplusRoot, col->valorCampo)){
-                        printf("\nERROR: tuple with primary key '%s' is referenced by table '%s' via foreign key '%s'", col->nomeCampo, temp->tabelaApt, temp->nome);
+                        printf("\nERROR: tuple with primary key '%s' is referenced by table '%s' via foreign key '%s'", col->nomeCampo, temp->tabelaApt, temp->attApt);
                         return 0;
                     }
                 }
@@ -1343,26 +1345,34 @@ void createTable(rc_insert *t) {
     }
   }
 
-  //Se não existe tabela com esse nome
-  if(finalizaTabela(tab) == SUCCESS) {
-  	for(int i = 0; i < t->N; i++) {
-  		if(t->attribute[i] == PK) { //procura o atributo PK e cria o arquivo de índice
-        char *aux_nome_index = NULL;
-  		  aux_nome_index = (char *)malloc(strlen(connected.db_directory) + strlen(t->objName) + strlen(t->columnName[i]));
-        strcpy(aux_nome_index, connected.db_directory);
-        strcat(aux_nome_index, t->objName);
-  		  strcat(aux_nome_index, t->columnName[i]);
-        inicializa_indice(aux_nome_index);
-        break;
-  		}
-  	}
-  	printf("CREATE TABLE\n");
-  } else { //Tabela já existe, então não é preciso criar o índice b+.
-	  printf("ERROR: table already exist\n");
-  }
+    //Se não existe tabela com esse nome
+    if(finalizaTabela(tab) == SUCCESS) {
+        for(int i = 0; i < t->N; i++) {
+            if(t->attribute[i] == PK) { //procura o atributo PK e cria o arquivo de índice
+                char *aux_nome_index = NULL;
+                aux_nome_index = (char *)malloc(strlen(connected.db_directory) + strlen(t->objName) + strlen(t->columnName[i]));
+                strcpy(aux_nome_index, connected.db_directory);
+                strcat(aux_nome_index, t->objName);
+                strcat(aux_nome_index, t->columnName[i]);
+                inicializa_indice(aux_nome_index);
+                break;
+            } else if (t->attribute[i] == FK) { //procura o atributo FK e cria o arquivo de índice
+                char *aux_nome_index = NULL;
+                aux_nome_index = (char *)malloc(strlen(connected.db_directory) + strlen(t->objName) + strlen(t->columnName[i]));
+                strcpy(aux_nome_index, connected.db_directory);
+                strcat(aux_nome_index, t->objName);
+                strcat(aux_nome_index, t->columnName[i]);
+                inicializa_indice(aux_nome_index);
+                break;
+            }
+        }
+        printf("CREATE TABLE\n");
+    } else { //Tabela já existe, então não é preciso criar o índice b+.
+        printf("ERROR: table already exist\n");
+    }
 
-  free(tableName);
-  if(tab != NULL) freeTable(tab);
+    free(tableName);
+    if(tab != NULL) freeTable(tab);
 }
 
 void createIndex(rc_insert *t) {
