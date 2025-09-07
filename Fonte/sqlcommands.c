@@ -914,7 +914,7 @@ void op_delete(Lista *toDeleteTuples, char *tableName) {
     }
 
     for (int p = 0; p < PAGES && bufferpoll[p].nrec; p++) {
-        int result = writeBufferToDisk(bufferpoll, &objeto, p, bufferpoll->nrec*tamTupla(esquema, objeto));
+        int result = writeBufferToDisk(bufferpoll, &objeto, p, tuplaCount*tamTupla(esquema, objeto));
         if (!result) {
             fprintf(stderr, "ERROR: failed to persist changes to disk\n");
             free(bufferpoll);
