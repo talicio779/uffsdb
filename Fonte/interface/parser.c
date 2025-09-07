@@ -369,6 +369,7 @@ int interface() {
             pthread_join(pth, NULL);
         }
     
+        uffsFree(TEMPORARY);
     }
     return 0;
 }
