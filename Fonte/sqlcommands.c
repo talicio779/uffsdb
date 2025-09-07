@@ -454,7 +454,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                         return ERRO_CHAVE_PRIMARIA;
                     }
         		}
-        		flag = 1; // TODO: ENTENDER ESSA FLAG
+        		flag = 1;
                 break;
 
             case FK:
@@ -541,7 +541,8 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
             free(nomeAtrib2);
         }
 
-        if (auxT[t].chave == FK) {
+        // Quando for refatorada a árvore ele deve permitir inserir NULL
+        if (auxT[t].chave == FK && auxC->valorCampo != COLUNA_NULL) {
 			char * nomeAtrib;
       		nomeAtrib = (char*)malloc((strlen(nome)+strlen(auxC->nomeCampo) + strlen(connected.db_directory))* sizeof(char));
       		strcpy(nomeAtrib, connected.db_directory);
@@ -887,12 +888,13 @@ void adcResultado(Lista *resultado, tupla *tuple, int *indiceProj, int qtdColuna
 
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Utilizada para deletar tuplas.
-    Parametros: Nome da tabela (char).
-    Retorno:    Void.
+    Parametros: toDeleteTuples -> Lista de tuplas a serem deletadas
+                tableName      -> Nome da tabela (char).
+    Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
-void op_delete(Lista *toDeleteTuples, char *tabelaName) {
+void op_delete(Lista *toDeleteTuples, char *tableName) {
     tp_table *esquema;
-    struct fs_objects objeto = leObjeto(tabelaName);
+    struct fs_objects objeto = leObjeto(tableName);
     esquema = leSchema(objeto);
     tp_buffer *bufferpoll = initbuffer();
     int countDeletedTuples = 0;
@@ -927,6 +929,12 @@ void op_delete(Lista *toDeleteTuples, char *tabelaName) {
     free(esquema);
 }
 
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Checa integridade referencial antes de deletar tuplas.
+    Parâmetros: resultado -> Lista de tuplas a deletar.
+                query     -> Dados da tabela alvo.
+    Retorno:    int -> 1 se não há violação, 0 se houver referência via chave estrangeira.
+   ---------------------------------------------------------------------------------------------*/
 int afterTrigger(Lista *resultado, inf_query *query) {
     tp_table *fkColumns = verificaIntegridade(query->tabela);
     for(tp_table *temp = fkColumns; temp; temp = temp->next) {
@@ -953,7 +961,7 @@ int afterTrigger(Lista *resultado, inf_query *query) {
                     }
 
                     if(buscaChaveBtree(bplusRoot, isStr ? col->valorCampo : valorConvertido)){
-                        printf("\nERROR: tuple with primary key '%s' is referenced by table '%s' via foreign key '%s'\n", col->nomeCampo, temp->tabelaApt, temp->nome);
+                        printf("\nERROR: Tuple with primary key is referenced by a table via foreign key '%s'\n", temp->nome);
                         return 0;
                     }
                 }
@@ -963,6 +971,12 @@ int afterTrigger(Lista *resultado, inf_query *query) {
     return 1;
 }
 
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Executa operações em uma tabela com base na query.
+    Parâmetros: query -> Estrutura com informações da operação e filtros.
+                tipo  -> 's' para select, 'd' para delete.
+    Retorno:    Lista* -> Lista de tuplas que satisfazem a condição ou NULL em caso de erro.
+   ---------------------------------------------------------------------------------------------*/
 Lista *handleTableOperation(inf_query *query, char tipo) {
     tp_table *esquema;
     tp_buffer *bufferpoll;
