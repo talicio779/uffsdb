@@ -9,6 +9,9 @@ MemoryContextRoot root = {0};
 static void uffsFreeRecursive(MemoryContext *context);
 
 void* uffsllocType(size_t size, MemoryContextType type) {
+    //  Para o futuro seria interessante criar uma pagina para allocações < 8 bytes, 
+    //      pois a struct de metadados tem 8 bytes ,
+    //      o que acaba usando muito espaço, duas alocações de 1 byte usam 18.
     size += 1;
     MemoryContext *context = type == TEMPORARY ? root.temporary : root.permanent;
     while(context) {
@@ -47,8 +50,8 @@ void* uffsllocType(size_t size, MemoryContextType type) {
     return ptr->data;
 }
 
-
-void uffsFree(MemoryContextType type) {
+// atualmente faz só do temporario, que é o necessario
+static void uffsFree(MemoryContextType type) {
     if (!root.temporary) return;
     MemoryContext *context = root.temporary;
     uffsFreeRecursive(context->next);
