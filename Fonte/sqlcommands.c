@@ -936,8 +936,24 @@ int afterTrigger(Lista *resultado, inf_query *query) {
             for(int i = 0; i < tupla->ncols; i++) {
                 column *col = &tupla->column[i];
                 if(!strncmp(col->nomeCampo, temp->attApt, TAMANHO_NOME_CAMPO)){
-                    if(buscaChaveBtree(bplusRoot, col->valorCampo)){
-                        printf("\nERROR: tuple with primary key '%s' is referenced by table '%s' via foreign key '%s'", col->nomeCampo, temp->tabelaApt, temp->attApt);
+                    char valorConvertido[21], isStr = 0; // 20 é a maior quantidade de caracteres que um inteiro pode representar + 1 pro \0
+
+                    switch (col->tipoCampo) {
+                        case 'I':
+                            sprintf(valorConvertido, "%d", *(int *) col->valorCampo);
+                            break;
+                        case 'D':
+                            sprintf(valorConvertido, "%lf", *(double *) col->valorCampo);
+                            break;
+                        case 'C':
+                        case 'S':
+                        default:
+                            isStr = 1;
+                        break;
+                    }
+
+                    if(buscaChaveBtree(bplusRoot, isStr ? col->valorCampo : valorConvertido)){
+                        printf("\nERROR: tuple with primary key '%s' is referenced by table '%s' via foreign key '%s'\n", col->nomeCampo, temp->tabelaApt, temp->nome);
                         return 0;
                     }
                 }
