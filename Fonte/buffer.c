@@ -222,7 +222,7 @@ int writeBufferToDisk(tp_buffer *bufferpoll, struct fs_objects *objeto, int bloc
     
     fseek(dados, blockNumber*SIZE, SEEK_SET);
 
-    fwrite(bufferpoll->data, blockOffset, 1, dados);
+    fwrite(bufferpoll->data, blockOffset, 1, dados); //TODO: arrumar o blockOffset
 
     fflush(dados);
 
