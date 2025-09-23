@@ -378,7 +378,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                     return ERRO_INDEX_NULL;
                 }
 
-                arquivoIndice = (char *)malloc(sizeof(char) * (strlen(connected.db_directory) + strlen(nome) + strlen(tab2[j].nome)));
+                arquivoIndice = (char *)uffslloc(sizeof(char) * (strlen(connected.db_directory) + strlen(nome) + strlen(tab2[j].nome)));
                 strcpy(arquivoIndice, connected.db_directory); //diretorio
                 strcat(arquivoIndice, nome); //nome da tabela
         		strcat(arquivoIndice, tab2[j].nome); //nome do atributo
@@ -396,9 +396,6 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                             }
                         }
                         printf("ERROR: duplicated key value violates unique constraint \"%s_pkey\"\nDETAIL:  Key (%s)=(%s) already exists.\n",nome,temp->nomeCampo,temp->valorCampo);
-                        free(auxT); // Libera a memoria da estrutura.
-                        free(tab); // Libera a memoria da estrutura.
-                        free(tab2); // Libera a memoria da estrutura.
                         return ERRO_CHAVE_PRIMARIA;
                     }
         		}
@@ -411,7 +408,7 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
                     return ERRO_INDEX_NULL;
                 }
                 //monta o nome do arquivo de indice da chave estrangeira
-                arquivoIndice = (char *)malloc(sizeof(char) * (strlen(connected.db_directory) + strlen(tab2[j].tabelaApt) + strlen(tab2[j].attApt)));// caminho diretorio de arquivo de indice
+                arquivoIndice = (char *)uffslloc(sizeof(char) * (strlen(connected.db_directory) + strlen(tab2[j].tabelaApt) + strlen(tab2[j].attApt)));// caminho diretorio de arquivo de indice
                 strcpy(arquivoIndice, connected.db_directory); //diretorio
                 strcat(arquivoIndice, tab2[j].tabelaApt);
                 strcat(arquivoIndice, tab2[j].attApt);
@@ -485,12 +482,11 @@ int finalizaInsert(char *nome, column *c, int tamTupla){
         // Quando for refatorada a árvore ele deve permitir inserir NULL
         if (auxT[t].chave == FK && auxC->valorCampo != COLUNA_NULL) {
 			char * nomeAtrib;
-      		nomeAtrib = (char*)malloc((strlen(nome)+strlen(auxC->nomeCampo) + strlen(connected.db_directory))* sizeof(char));
+      		nomeAtrib = (char*)uffslloc((strlen(nome)+strlen(auxC->nomeCampo) + strlen(connected.db_directory))* sizeof(char));
       		strcpy(nomeAtrib, connected.db_directory);
       		strcat(nomeAtrib, nome);
       		strcat(nomeAtrib,auxC->nomeCampo);
             insere_indice(raizfk, auxC->valorCampo, nomeAtrib, offset);
-            free(nomeAtrib);
         }
 
         if(auxC->valorCampo == COLUNA_NULL) {
@@ -1280,7 +1276,7 @@ void createTable(rc_insert *t) {
         for(int i = 0; i < t->N; i++) {
             if(t->attribute[i] == PK) { //procura o atributo PK e cria o arquivo de índice
                 char *aux_nome_index = NULL;
-                aux_nome_index = (char *)malloc(strlen(connected.db_directory) + strlen(t->objName) + strlen(t->columnName[i]));
+                aux_nome_index = (char *)uffslloc(strlen(connected.db_directory) + strlen(t->objName) + strlen(t->columnName[i]));
                 strcpy(aux_nome_index, connected.db_directory);
                 strcat(aux_nome_index, t->objName);
                 strcat(aux_nome_index, t->columnName[i]);
@@ -1288,7 +1284,7 @@ void createTable(rc_insert *t) {
                 break;
             } else if (t->attribute[i] == FK) { //procura o atributo FK e cria o arquivo de índice
                 char *aux_nome_index = NULL;
-                aux_nome_index = (char *)malloc(strlen(connected.db_directory) + strlen(t->objName) + strlen(t->columnName[i]));
+                aux_nome_index = (char *)uffslloc(strlen(connected.db_directory) + strlen(t->objName) + strlen(t->columnName[i]));
                 strcpy(aux_nome_index, connected.db_directory);
                 strcat(aux_nome_index, t->objName);
                 strcat(aux_nome_index, t->columnName[i]);
@@ -1301,7 +1297,6 @@ void createTable(rc_insert *t) {
         printf("ERROR: table already exist\n");
     }
 
-    free(tableName);
     if(tab != NULL) freeTable(tab);
 }
 
