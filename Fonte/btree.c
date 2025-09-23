@@ -176,7 +176,7 @@ nodo* constroi_bplus(char* nomeTabela){
 	new = fopen(nomeArquivo,"r");
 	if(!new){
 		printf("Erro de abertura de arquivo\n");
-		// fclose(new);
+		fclose(new);
 		return NULL;
 	}
 	fread(&le, sizeof(char),1,new);

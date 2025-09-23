@@ -30,25 +30,20 @@ int typesCompatible(char , char);
 */
 int finalizaInsert(char *, column *, int tamTupla);
 /* ----------------------------------------------------------------------------------------------
-    Objetivo:   Utilizada para deletar tuplas.
-    Parametros: toDeleteTuples -> Lista de tuplas a serem deletadas
-                tableName      -> Nome da tabela (char).
+    Objetivo:   Utilizada para impressão de tabelas.
+    Parametros: Nome da tabela (char).
     Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
-void op_delete(Lista *toDeleteTuples, char *tableName);
+Lista *op_select(inf_query *);
 /* ----------------------------------------------------------------------------------------------
-    Objetivo:   Checa integridade referencial antes de deletar tuplas.
-    Parâmetros: resultado -> Lista de tuplas a deletar.
-                query     -> Dados da tabela alvo.
-    Retorno:    int -> 1 se não há violação, 0 se houver referência via chave estrangeira.
+    Objetivo:   Utilizada para deletar tuplas.
+    Parametros: Nome da tabela (char).
+    Retorno:    void.
    ---------------------------------------------------------------------------------------------*/
+void op_delete(Lista *toDeleteTuples, char *tabelaName);
+
 int afterTrigger(Lista *resultado, inf_query *query);
-/* ----------------------------------------------------------------------------------------------
-    Objetivo:   Executa operações em uma tabela com base na query.
-    Parâmetros: query -> Estrutura com informações da operação e filtros.
-                tipo  -> 's' para select, 'd' para delete.
-    Retorno:    Lista* -> Lista de tuplas que satisfazem a condição ou NULL em caso de erro.
-   ---------------------------------------------------------------------------------------------*/
+
 Lista *handleTableOperation(inf_query *select, char tipo);
 /* ----------------------------------------------------------------------------------------------
     Objetivo:   Função para exclusão de tabelas.
