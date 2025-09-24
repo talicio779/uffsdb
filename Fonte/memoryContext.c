@@ -51,7 +51,7 @@ void* uffsllocType(size_t size, MemoryContextType type) {
 }
 
 // atualmente faz só do temporario, que é o necessario
-static void uffsFree(MemoryContextType type) {
+void uffsFree(MemoryContextType type) {
     if (!root.temporary) return;
     MemoryContext *context = root.temporary;
     uffsFreeRecursive(context->next);
