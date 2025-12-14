@@ -213,8 +213,57 @@ void resetQuery() {
     }
 }
 
+void resetUpdateData() {
+    if(getMode() == OP_UPDATE) {
+        if(UPDATE_DATA.tabela) {
+            free(UPDATE_DATA.tabela);
+            UPDATE_DATA.tabela = NULL;
+        }
+        
+        for(int i = 0; i < UPDATE_DATA.count; i++) {
+            if(UPDATE_DATA.colunas) free(UPDATE_DATA.colunas[i]);
+            if(UPDATE_DATA.values) free(UPDATE_DATA.values[i]);
+        }
+        
+        if(UPDATE_DATA.colunas) {
+            free(UPDATE_DATA.colunas);
+            UPDATE_DATA.colunas = NULL;
+        }
+        
+        if(UPDATE_DATA.values) {
+            free(UPDATE_DATA.values);
+            UPDATE_DATA.values = NULL;
+        }
+        
+        if(UPDATE_DATA.types) {
+            free(UPDATE_DATA.types);
+            UPDATE_DATA.types = NULL;
+        }
+        
+        UPDATE_DATA.count = 0;
+        
+        // Reseta WHERE também
+        if(QUERY.tok) limparLista(QUERY.tok);
+        QUERY.tok = NULL;
+    }
+}
+
+void setTableUpdate(char *nome) {
+    UPDATE_DATA.tabela = malloc(sizeof(char) * (strlen(nome) + 1));
+    strcpylower(UPDATE_DATA.tabela, nome);
+    UPDATE_DATA.tabela[strlen(nome)] = '\0';
+
+    // Utilizando a mesma variável global para WHERE
+    if(QUERY.tabela) free(QUERY.tabela);
+    QUERY.tabela = malloc(sizeof(char) * (strlen(nome) + 1));
+    strcpylower(QUERY.tabela, nome);
+    QUERY.tabela[strlen(nome)] = '\0';
+}
+
 void clearGlobalStructs() {
     resetQuery();
+    resetUpdateData();
+
     if (GLOBAL_DATA.objName) {
         GLOBAL_DATA.objName = NULL;
     }

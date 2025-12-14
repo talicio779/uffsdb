@@ -141,3 +141,13 @@ char getMode();
 * op1: grava o histórico
 */
 void quit(int flag);
+
+/*
+  Reseta as estruturas da estrutura UPDATE.
+*/
+void resetUpdateData();
+
+/*
+  Define o nome da tabela onde será realizado o update.
+*/
+void setTableUpdate(char *nome);

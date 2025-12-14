@@ -77,6 +77,14 @@ typedef struct  inf_query {
   char queryType;   // 'S' for SELECT, 'D' for DELETE
 } inf_query;
 
+typedef struct inf_update {
+    char *tabela;       // Nome da tabela
+    char **colunas;     // Colunas a serem atualizadas
+    char **values;      // Novos valores
+    char *types;        // Tipos dos valores
+    int count;          // Quantidade de colunas a atualizar
+} inf_update;
+
 typedef struct rc_parser {
     int         mode;           // Modo de operação (definido em /interface/parser.h)
     int         parentesis;     // Contador de parenteses abertos
