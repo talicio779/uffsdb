@@ -874,7 +874,54 @@ void op_update(Lista *toUpdateTuples, inf_update *updateData) {
     tuplaCount--; 
 
 
-    //Realizar alteração das tuplas aqui
+    //Atualização das tuplas
+    for (Nodo *temp = toUpdateTuples->prim; temp; temp = temp->prox) {
+        tupla *t = (tupla *)temp->inf;
+         
+        // Ponteiro para o início da tupla na página do buffer
+        char *tuplePtr = bufferpoll[t->bufferPage].data + t->offset;
+
+        // Ponteiro para a área de dados da tupla (após o byte de controle e os bytes de null bitmap)
+        char *dataBase = tuplePtr + 1 + objeto.qtdCampos; 
+
+        // Offset inicial para percorrer os campos da tupla
+        int payloadOffset = 0; 
+
+        // Itera sobre as colunas do esquema da tabela
+        for(int i = 0; i < objeto.qtdCampos; i++) {
+            // Verifica se a coluna atual (i) está na lista de colunas para atualizar (j)
+            for(int j = 0; j < updateData->count; j++) {
+                if(strcmp(esquema[i].nome, updateData->colunas[j]) == 0) {
+
+                    // Atualiza o valor da coluna na tupla em memória
+                    char *fieldPtr = dataBase + payloadOffset;
+
+                    if(esquema[i].tipo == 'S' || esquema[i].tipo == 'C') {
+
+                        strncpy(fieldPtr, updateData->values[j], esquema[i].tam);
+
+                    } else if(esquema[i].tipo == 'I') {
+
+                        // Converte ASCII -> Int e copia os bytes
+                        int val = atoi(updateData->values[j]); 
+                        memcpy(fieldPtr, &val, sizeof(int));
+                        
+                    } else if(esquema[i].tipo == 'D') {
+
+                        // Converte ASCII -> Double e copia os bytes
+                        double val = atof(updateData->values[j]);
+                        memcpy(fieldPtr, &val, sizeof(double));
+                    }
+                }
+            }
+
+            // Avança o offset para a próxima coluna na memória
+            payloadOffset += esquema[i].tam;
+        }
+
+        bufferpoll[t->bufferPage].db = 1; // Marca a página como "suja" (modificada)
+        countUpdatedTuples++;
+    }
 
 
     // Grava as páginas modificadas de volta ao disco, usando o tamanho efetivo da página
