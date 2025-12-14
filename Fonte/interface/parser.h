@@ -151,3 +151,12 @@ void resetUpdateData();
   Define o nome da tabela onde será realizado o update.
 */
 void setTableUpdate(char *nome);
+
+/*
+  Define a coluna que será atualizada.
+*/
+void setUpdateColumn(char *col);
+/*
+  Define o valor que será atualizado.
+*/
+void setUpdateValue(char *val, char type);

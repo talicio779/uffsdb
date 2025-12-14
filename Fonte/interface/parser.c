@@ -260,6 +260,39 @@ void setTableUpdate(char *nome) {
     QUERY.tabela[strlen(nome)] = '\0';
 }
 
+void setUpdateColumn(char *col) {
+    UPDATE_DATA.colunas = realloc(UPDATE_DATA.colunas, 
+                                   (UPDATE_DATA.count + 1) * sizeof(char*));
+    
+    UPDATE_DATA.colunas[UPDATE_DATA.count] = malloc(sizeof(char) * (strlen(col) + 1));
+    strcpylower(UPDATE_DATA.colunas[UPDATE_DATA.count], col);
+    UPDATE_DATA.colunas[UPDATE_DATA.count][strlen(col)] = '\0';
+}
+
+void setUpdateValue(char *val, char type) {
+    UPDATE_DATA.values = realloc(UPDATE_DATA.values, 
+                                   (UPDATE_DATA.count + 1) * sizeof(char*));
+    UPDATE_DATA.types = realloc(UPDATE_DATA.types, 
+                                 (UPDATE_DATA.count + 1) * sizeof(char));
+    
+    UPDATE_DATA.values[UPDATE_DATA.count] = malloc(sizeof(char) * (strlen(val) + 1));
+    
+    if (type == 'S') {
+        int i;
+        for (i = 1; i < strlen(val)-1; i++) {
+            UPDATE_DATA.values[UPDATE_DATA.count][i-1] = val[i];
+        }
+        UPDATE_DATA.values[UPDATE_DATA.count][strlen(val)-2] = '\0';
+    } else {
+        strcpy(UPDATE_DATA.values[UPDATE_DATA.count], val);
+        UPDATE_DATA.values[UPDATE_DATA.count][strlen(val)] = '\0';
+    }
+    
+    UPDATE_DATA.types[UPDATE_DATA.count] = type;
+    
+    UPDATE_DATA.count++;
+}
+
 void clearGlobalStructs() {
     resetQuery();
     resetUpdateData();
