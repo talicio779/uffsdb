@@ -850,6 +850,52 @@ void op_delete(Lista *toDeleteTuples, char *tabelaName) {
 
 }
 
+void op_update(Lista *toUpdateTuples, inf_update *updateData) {
+    tp_table *esquema;
+    struct fs_objects objeto = leObjeto(updateData->tabela);
+    esquema = leSchema(objeto); 
+
+    // Inicializa o buffer para manipulação das páginas em memória
+    tp_buffer *bufferpoll = initbuffer();
+    int countUpdatedTuples = 0;
+
+    if(bufferpoll == ERRO_DE_ALOCACAO){
+        printf("ERROR: no memory available to allocate buffer.\n");
+        free(esquema);
+        return;
+    }
+
+    // Carrega as páginas do disco para o buffer
+    int tuplaCount = 0, erro;
+    do {
+        erro = colocaTuplaBuffer(bufferpoll, tuplaCount, esquema, objeto);
+        tuplaCount++;
+    } while(erro == SUCCESS || erro == ERRO_LEITURA_DADOS_DELETADOS);
+    tuplaCount--; 
+
+
+    //Realizar alteração das tuplas aqui
+
+
+    // Grava as páginas modificadas de volta ao disco, usando o tamanho efetivo da página
+    for (int p = 0; p < PAGES && bufferpoll[p].nrec; p++) {
+        if(bufferpoll[p].db) { 
+             int result = writeBufferToDisk(&bufferpoll[p], &objeto, p, bufferpoll[p].position);
+             if (!result) {
+                 fprintf(stderr, "ERROR: failed to persist changes to disk\n");
+                 free(bufferpoll);
+                 free(esquema);
+                 return;
+             }
+        }
+    }
+
+    printf("UPDATED %d %s\n", countUpdatedTuples, (countUpdatedTuples != 1) ? "rows" : "row");
+
+    free(bufferpoll);
+    free(esquema);
+}
+
 int afterTrigger(Lista *resultado, inf_query *query) {
     tp_table *fkColumns = verificaIntegridade(query->tabela);
     for(tp_table *temp = fkColumns; temp; temp = temp->next) {

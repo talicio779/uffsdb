@@ -42,6 +42,13 @@ Lista *op_select(inf_query *);
    ---------------------------------------------------------------------------------------------*/
 void op_delete(Lista *toDeleteTuples, char *tabelaName);
 
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Executa a operação de UPDATE em uma lista de tuplas.
+    Parametros: Lista de tuplas a atualizar, estrutura com dados do update.
+    Retorno:    void.
+   ---------------------------------------------------------------------------------------------*/
+void op_update(Lista *toUpdateTuples, inf_update *updateData);
+
 int afterTrigger(Lista *resultado, inf_query *query);
 
 Lista *handleTableOperation(inf_query *select, char tipo);
