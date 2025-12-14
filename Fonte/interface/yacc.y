@@ -234,6 +234,18 @@ atributo: OBJECT {setColumnBtreeCreate(yytext);}
 /* DELETE */
 delete: DELETE FROM {setMode(OP_DELETE); resetQuery();} table_query where semicolon { return 0; };
 
+/* UPDATE */
+update: UPDATE {setMode(OP_UPDATE); resetUpdateData();} table_update SET set_list where semicolon { return 0; };
+
+table_update: OBJECT {setTableUpdate(yylval.strval);};
+
+set_list: set_assignment | set_assignment ',' set_list;
+
+set_assignment: OBJECT {setUpdateColumn(yylval.strval);} RELACIONAL update_value {/* column = value processado */};
+
+update_value: VALUE {setUpdateValue(yylval.strval, 'D');}
+            | NUMBER {setUpdateValue(yylval.strval, 'I');}
+            | STRING {setUpdateValue(yylval.strval, 'S');};
 
 /* END */
 %%
