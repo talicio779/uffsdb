@@ -850,6 +850,32 @@ void op_delete(Lista *toDeleteTuples, char *tabelaName) {
 
 }
 
+int validate_update(inf_update *updateData, tp_table *esquema, struct fs_objects objeto) {
+  // Validação dos dados de atualização
+  for(int j = 0; j < updateData->count; j++) {
+    int found = 0;
+    // Verifica se a coluna solicitada existe no esquema da tabela
+    for(int i = 0; i < objeto.qtdCampos; i++) {
+      if(strcmp(esquema[i].nome, updateData->colunas[j]) == 0) {
+        found = 1;
+        
+        // Validação de Chave Primária (PK) impedindo a alteração
+        if(esquema[i].chave == PK) {
+          printf("ERROR: Cannot update Primary Key column '%s'. Integrity violation risk.\n", updateData->colunas[j]);
+          return 0;
+        }
+      }
+    }
+    
+    // Caso a coluna não seja encontrada no esquema da tabela
+    if (!found) {
+      printf("ERROR: Column '%s' not found in table '%s'.\n", updateData->colunas[j], updateData->tabela);
+      return 0;
+    }
+ }
+  return 1;
+}
+
 void op_update(Lista *toUpdateTuples, inf_update *updateData) {
     tp_table *esquema;
     struct fs_objects objeto = leObjeto(updateData->tabela);
