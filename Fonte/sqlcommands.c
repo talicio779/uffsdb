@@ -850,30 +850,85 @@ void op_delete(Lista *toDeleteTuples, char *tabelaName) {
 
 }
 
+/* ----------------------------------------------------------------------------------------------
+    Objetivo:   Valida os dados de atualização antes de executar a operação.
+    Parametros: Dados de atualização, Esquema da tabela, Objeto da tabela.
+    Retorno:    int 1 (Sucesso) ou 0 (Erro).
+   ---------------------------------------------------------------------------------------------*/
 int validate_update(inf_update *updateData, tp_table *esquema, struct fs_objects objeto) {
-  // Validação dos dados de atualização
-  for(int j = 0; j < updateData->count; j++) {
-    int found = 0;
-    // Verifica se a coluna solicitada existe no esquema da tabela
-    for(int i = 0; i < objeto.qtdCampos; i++) {
-      if(strcmp(esquema[i].nome, updateData->colunas[j]) == 0) {
-        found = 1;
-        
-        // Validação de Chave Primária (PK) impedindo a alteração
-        if(esquema[i].chave == PK) {
-          printf("ERROR: Cannot update Primary Key column '%s'. Integrity violation risk.\n", updateData->colunas[j]);
-          return 0;
+    // Validação dos dados de atualização
+    for(int j = 0; j < updateData->count; j++) {
+        int found = 0;
+        // Verifica se a coluna solicitada existe no esquema da tabela
+        for(int i = 0; i < objeto.qtdCampos; i++) {
+            if(strcmp(esquema[i].nome, updateData->colunas[j]) == 0) {
+                found = 1;
+                
+                // Validação de Chave Primária (PK) impedindo a alteração
+                if(esquema[i].chave == PK) {
+                    printf("ERROR: Cannot update Primary Key column '%s'. Integrity violation risk.\n", updateData->colunas[j]);
+                    return 0;
+                }
+
+                // Validação de Chave Estrangeira (FK) verificando se o novo valor existe na tabela referenciada
+                if(esquema[i].chave == FK) {
+                    if (strlen(esquema[i].tabelaApt) != 0 && strlen(esquema[i].attApt) != 0) {
+                        column tempCol;
+                        memset(&tempCol, 0, sizeof(column));
+                        strcpy(tempCol.nomeCampo, esquema[i].nome);
+                        tempCol.tipoCampo = esquema[i].tipo;
+                        
+                        int erroFK = verificaChaveFK(updateData->tabela, &tempCol, esquema[i].nome, updateData->values[j],
+                                                   esquema[i].tabelaApt, esquema[i].attApt);
+                        
+                        if (erroFK != SUCCESS) {
+                            printf("ERROR: Invalid reference to \"%s.%s\". The value \"%s\" does not exist.\n", 
+                                   esquema[i].tabelaApt, esquema[i].attApt, updateData->values[j]);
+                            return 0;
+                        }
+                    }
+                }
+
+                // Validação de Tipo Inteiro garantindo que o valor contém apenas dígitos válidos.
+                if(esquema[i].tipo == 'I') {
+                    char *val = updateData->values[j];
+                    for(int k=0; val[k]; k++) {
+                        if(k==0 && val[k]=='-') continue;
+                        if(val[k] < '0' || val[k] > '9') {
+                            printf("ERROR: Invalid integer value '%s' for column '%s'.\n", val, esquema[i].nome);
+                            return 0;
+                        }
+                    }
+                }
+                
+                // Validação de Tipo Double garantindo formato numérico válido.
+                if(esquema[i].tipo == 'D') {
+                     char *val = updateData->values[j];
+                     int dots = 0;
+                     for(int k=0; val[k]; k++) {
+                        if(k==0 && val[k]=='-') continue;
+                        if(val[k] == '.') { dots++; continue; }
+                        if(val[k] < '0' || val[k] > '9') {
+                             printf("ERROR: Invalid double value '%s' for column '%s'.\n", val, esquema[i].nome);
+                             return 0;
+                        }
+                     }
+                     // Verifica se há mais de um ponto decimal
+                     if(dots > 1) {
+                         printf("ERROR: Invalid double value '%s' for column '%s'.\n", val, esquema[i].nome);
+                         return 0;
+                     }
+                }
+                break;
+            }
         }
-      }
+        // Caso a coluna não seja encontrada no esquema da tabela
+        if (!found) {
+            printf("ERROR: Column '%s' not found in table '%s'.\n", updateData->colunas[j], updateData->tabela);
+            return 0;
+        }
     }
-    
-    // Caso a coluna não seja encontrada no esquema da tabela
-    if (!found) {
-      printf("ERROR: Column '%s' not found in table '%s'.\n", updateData->colunas[j], updateData->tabela);
-      return 0;
-    }
- }
-  return 1;
+    return 1;
 }
 
 void op_update(Lista *toUpdateTuples, inf_update *updateData) {
