@@ -931,6 +931,29 @@ int validate_update(inf_update *updateData, tp_table *esquema, struct fs_objects
     return 1;
 }
 
+/* ----------------------------------------------------------------------------------------------
+  Objetivo: Atualiza o índice B+ de uma coluna, se existir.
+  Parâmetros: coluna (esquema), tableName (nome da tabela), newValue (novo valor no índice), offset (offset da tupla no arquivo).
+  Retorno: void.
+  ----------------------------------------------------------------------------------------------*/
+void updateIndex(tp_table *coluna, char *tableName, char *newValue, int offset) {
+    // Constrói o nome do arquivo de índice
+    char *nomeIndice = (char *)malloc(sizeof(char) * 
+        (strlen(connected.db_directory) + strlen(tableName) + strlen(coluna->nome) + 1));
+    strcpy(nomeIndice, connected.db_directory);
+    strcat(nomeIndice, tableName);
+    strcat(nomeIndice, coluna->nome);
+
+    // Carrega a árvore B+ do disco
+    nodo *raiz = constroi_bplus(nomeIndice);
+
+    if (raiz) {
+        // Insere a nova chave no índice apontando para o mesmo offset
+        insere_indice(raiz, newValue, nomeIndice, offset);
+    }
+    free(nomeIndice);
+}
+
 void op_update(Lista *toUpdateTuples, inf_update *updateData) {
     tp_table *esquema;
     struct fs_objects objeto = leObjeto(updateData->tabela);
